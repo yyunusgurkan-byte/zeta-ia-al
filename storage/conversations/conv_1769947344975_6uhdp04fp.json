@@ -1,0 +1,16 @@
+{
+  "id": "conv_1769947344975_6uhdp04fp",
+  "title": "Yeni Sohbet",
+  "messages": [
+    {
+      "role": "assistant",
+      "content": "Merhaba! Nasıl yardımcı olabilirim?"
+    },
+    {
+      "role": "assistant",
+      "content": "Merhaba! Gününüz nasıl geçiyor? Bir konuda yardımınıza ihtiyacınız var mı?"
+    }
+  ],
+  "createdAt": 1769947344975,
+  "updatedAt": 1769947474080
+}

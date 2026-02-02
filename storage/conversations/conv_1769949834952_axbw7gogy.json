@@ -1,0 +1,24 @@
+{
+  "id": "conv_1769949834952_axbw7gogy",
+  "title": "Yeni Sohbet",
+  "messages": [
+    {
+      "role": "assistant",
+      "content": "Merhaba! Ben Zeta, sana nasıl yardımcı olabilirim?"
+    },
+    {
+      "role": "assistant",
+      "content": "Güzel! Kızımla ders yapmak çok özel bir an. Hangi konuda çalışıyorsunuz? Matematik, Türkçe veya başka bir şey mi? Yardımcı olabileceğim bir şey var mı?"
+    },
+    {
+      "role": "assistant",
+      "content": "Güzel bir soru! Kızının adı hakkında bir tahminde bulunmak zor, ama ben deneyeceğim. Acaba... Defne, Zeynep, veya Asya olabilir mi?"
+    },
+    {
+      "role": "assistant",
+      "content": "Güzel isim! Azra, güzel ve anlamlı bir isim. Türk kültüründe Azra, \"çiçek\" veya \"güzel\" anlamına geliyor. Kızınızın ismi gerçekten güzel!"
+    }
+  ],
+  "createdAt": 1769949834952,
+  "updatedAt": 1769949921656
+}

@@ -1,0 +1,28 @@
+{
+  "id": "conv_1769976102782_i0sb3go64",
+  "title": "Yeni Sohbet",
+  "messages": [
+    {
+      "role": "assistant",
+      "content": "Merhaba! Nasılsınız? Size nasıl yardımcı olabilirim?"
+    },
+    {
+      "role": "assistant",
+      "content": "Çiftçinin 17 koyunu vardı ve 9'u dışında hepsi öldü, yani 9 koyun kaldı. Yanıt: 9 koyun."
+    },
+    {
+      "role": "assistant",
+      "content": "Selamlar! İyiyim, siz nasılsınız? Bugün nasıl geçiyor?"
+    },
+    {
+      "role": "assistant",
+      "content": "Sormak istediğiniz soru nedir?"
+    },
+    {
+      "role": "user",
+      "content": "Bir çiftçinin 17 koyunu vardı. Salgın hastalık nedeniyle 9'u dışında hepsi öldü. Geriye kaç koyun kaldı?"
+    }
+  ],
+  "createdAt": 1769976102782,
+  "updatedAt": 1769976234668
+}

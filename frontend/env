@@ -1,0 +1,107 @@
+# 🔐 ZETA AI - ENVIRONMENT VARIABLES
+# Bu dosyayı .gitignore'a eklemeyi unutma!
+
+# ====================================================================
+# 🚀 SERVER CONFIGURATION
+# ====================================================================
+PORT=3001
+NODE_ENV=development
+FRONTEND_URL=http://localhost:5173
+
+# ====================================================================
+# 🤖 GROQ API (Ana AI Modeli)
+# ====================================================================
+# https://console.groq.com/keys adresinden al
+VITE_GROQ_API_KEY=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
+
+# Yedek API Key (opsiyonel)
+VITE_FALLBACK_API_KEY=
+
+# Model seçimi
+AI_MODEL_NAME=llama-3.1-70b-versatile
+FALLBACK_MODEL_NAME=llama-3.1-8b-instant
+
+# ====================================================================
+# 👁️ OPENAI API (Görsel Analiz için - opsiyonel)
+# ====================================================================
+# https://platform.openai.com/api-keys adresinden al
+VITE_OPENAI_API_KEY=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
+
+# ====================================================================
+# 🌤️ WEATHER API (Hava Durumu)
+# ====================================================================
+# https://www.weatherapi.com/signup.aspx adresinden ücretsiz al
+WEATHER_API_KEY=718de9194143487d9a950729262901
+
+# ====================================================================
+# 🌐 WEB SEARCH API (Opsiyonel)
+# ====================================================================
+# DuckDuckGo API kullanıyoruz (API key gerektirmiyor)
+# Eğer Google Custom Search kullanacaksan:
+# https://developers.google.com/custom-search/v1/introduction
+GOOGLE_CUSTOM_SEARCH_KEY=AIzaSyBDyzVKTr76x9YPhUdOzR0-DyBtY_S-GrQ
+GOOGLE_SEARCH_ENGINE_ID=431e588d6505d4f7d
+
+# SerpAPI (opsiyonel - 100 arama/ay ücretsiz)
+# https://serpapi.com/manage-api-key
+SERPAPI_KEY=4209c0515416b45bb199b75f876d56253d9f642693c8cc9636ac1fedfd462744
+
+# ====================================================================
+# ⚽ SPORTS API (RapidAPI - API-Football)
+# ====================================================================
+# https://rapidapi.com/api-sports/api/api-football
+# Ücretsiz: 100 istek/gün
+
+# RapidAPI anahtarın (ZORUNLU - spor sorguları için)
+RAPIDAPI_KEY=ae16f3c0acmsh7e739f8d606351dp13fbd8jsn2e857d6b4272
+
+# Host (değiştirme)
+RAPIDAPI_HOST=api-football-v1.p.rapidapi.com
+
+# ====================================================================
+# 💾 DATABASE (Gelecekte eklenebilir)
+# ====================================================================
+# MongoDB
+MONGODB_URI=mongodb://localhost:27017/zeta-ai
+
+# PostgreSQL (opsiyonel)
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_DB=zeta_ai
+POSTGRES_USER=zeta_user
+POSTGRES_PASSWORD=
+
+# ====================================================================
+# 🔒 SECURITY
+# ====================================================================
+# JWT Secret (konuşma şifreleme için)
+JWT_SECRET=your-super-secret-jwt-key-change-this
+
+# Rate Limiting
+RATE_LIMIT_WINDOW_MS=60000
+RATE_LIMIT_MAX_REQUESTS=30
+
+# ====================================================================
+# 📊 LOGGING & MONITORING
+# ====================================================================
+LOG_LEVEL=info
+ENABLE_REQUEST_LOGGING=true
+
+# ====================================================================
+# 🎯 FEATURE FLAGS
+# ====================================================================
+ENABLE_WEB_SEARCH=true
+ENABLE_IMAGE_ANALYSIS=false
+ENABLE_VOICE_FEATURES=true
+ENABLE_FILE_UPLOAD=true
+
+# ====================================================================
+# 📝 NOTLAR
+# ====================================================================
+# 1. GROQ API Key: Mutlaka gerekli! (https://console.groq.com)
+# 2. Weather API: Ücretsiz, hemen kullanılabilir
+# 3. OpenAI: Sadece görsel analiz için (opsiyonel)
+# 4. Diğerleri: İhtiyaca göre eklenebilir
+#
+# Bu dosyayı asla GitHub'a yükleme!
+# .gitignore dosyasına .env ekle

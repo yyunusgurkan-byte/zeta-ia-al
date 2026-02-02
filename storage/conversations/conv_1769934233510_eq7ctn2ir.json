@@ -1,0 +1,12 @@
+{
+  "id": "conv_1769934233510_eq7ctn2ir",
+  "title": "Yeni Sohbet",
+  "messages": [
+    {
+      "role": "user",
+      "content": "selam"
+    }
+  ],
+  "createdAt": 1769934233511,
+  "updatedAt": 1769934237744
+}
