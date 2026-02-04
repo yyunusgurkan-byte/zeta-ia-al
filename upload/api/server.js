@@ -19,9 +19,9 @@ require('dotenv').config();
 // ====================================================================
 app.use(cors({
   origin: ['http://www.alzeta.site', 'http://alzeta.site', 'https://www.alzeta.site', 'https://alzeta.site'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Bu satırı ekle!
   credentials: true
 }));
-
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -65,7 +65,7 @@ app.use(errorHandler);
 // ====================================================================
 // SERVER START
 // ====================================================================
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log('');
   console.log('🚀 ================================');
   console.log('🤖 ZETA AI BACKEND');

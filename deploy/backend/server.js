@@ -1,4 +1,6 @@
 // 🚀 ZETA AI - BACKEND SERVER
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path'); // Dosya yolları için eklendi
@@ -18,8 +20,7 @@ require('dotenv').config();
 // MIDDLEWARE
 // ====================================================================
 app.use(cors({
-  origin: ['http://www.alzeta.site', 'http://alzeta.site', 'https://www.alzeta.site', 'https://alzeta.site'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Bu satırı ekle!
+  origin: "http://www.alzeta.site", // localhost yerine bunu yaz
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));

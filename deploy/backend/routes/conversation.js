@@ -8,7 +8,8 @@ const path = require('path');
 const { conversationLimiter } = require('../middleware/rateLimiter');
 
 // Storage path
-const STORAGE_PATH = path.join(__dirname, '../storage/conversations');
+const STORAGE_PATH = path.join(__dirname, '../../storage/conversations');
+
 // Storage klasörünü oluştur (yoksa)
 const ensureStorageExists = async () => {
   try {
