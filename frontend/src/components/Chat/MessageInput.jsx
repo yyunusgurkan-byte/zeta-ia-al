@@ -21,18 +21,22 @@ const MessageInput = ({ onSend, disabled = false, placeholder = "Bir mesaj yazı
   };
 
   const handleSubmit = (e) => {
-    e.preventDefault();
+  e.preventDefault();
+  
+  if (message.trim() && !disabled) {
+    onSend(message.trim());
+    setMessage('');
     
-    if (message.trim() && !disabled) {
-      onSend(message.trim());
-      setMessage('');
-      
-      // Reset textarea height
-      if (textareaRef.current) {
-        textareaRef.current.style.height = 'auto';
-      }
+    // Reset textarea height and focus
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      // Focus textarea after sending
+      setTimeout(() => {
+        textareaRef.current?.focus();
+      }, 100);
     }
-  };
+  }
+};
 
   const handleKeyDown = (e) => {
     // Enter tuşu ile gönder (Shift+Enter yeni satır)

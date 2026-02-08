@@ -1,239 +1,200 @@
 // frontend/src/components/Sidebar/ConversationList.jsx
+import { useState } from 'react'
 
-import React, { useState, useEffect } from 'react';
-import ConversationItem from './ConversationItem';
-import './ConversationList.css';
+const ConversationList = ({ 
+  conversations = [], 
+  currentConversationId,
+  onSelectConversation,
+  onNewConversation,
+  onDeleteConversation,
+  onRenameConversation
+}) => {
+  const [isCollapsed, setIsCollapsed] = useState(false)
+  const [editingId, setEditingId] = useState(null)
+  const [editTitle, setEditTitle] = useState('')
+  const [menuOpenId, setMenuOpenId] = useState(null)
 
-const ConversationList = ({ onSelectConversation, activeConversationId = null }) => {
-  const [conversations, setConversations] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const formatDate = (date) => {
+    const now = new Date()
+    const conversationDate = new Date(date)
+    const diffMs = now - conversationDate
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMins / 60)
+    const diffDays = Math.floor(diffHours / 24)
 
-  useEffect(() => {
-    loadConversations();
-  }, []);
+    if (diffMins < 1) return 'Şimdi'
+    if (diffMins < 60) return `${diffMins} dk önce`
+    if (diffHours < 24) return `${diffHours} saat önce`
+    if (diffDays === 1) return 'Dün'
+    if (diffDays < 7) return `${diffDays} gün önce`
+    
+    return conversationDate.toLocaleDateString('tr-TR', {
+      day: 'numeric',
+      month: 'short'
+    })
+  }
 
-  const loadConversations = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch('/api/conversations');
-      const data = await response.json();
-      setConversations(data.conversations || []);
-    } catch (error) {
-      console.error('Error loading conversations:', error);
-    } finally {
-      setIsLoading(false);
+  const handleRename = (id) => {
+    if (editTitle.trim()) {
+      onRenameConversation(id, editTitle.trim())
     }
-  };
+    setEditingId(null)
+    setMenuOpenId(null)
+  }
 
-  const handleNewConversation = () => {
-    onSelectConversation(null);
-  };
-
-  const handleSelectConversation = (conversation) => {
-    onSelectConversation(conversation.id);
-  };
-
-  const handleDeleteConversation = async (conversationId) => {
-    try {
-      await fetch(`/api/conversations/${conversationId}`, {
-        method: 'DELETE'
-      });
-      
-      setConversations(prev => prev.filter(c => c.id !== conversationId));
-      
-      if (conversationId === activeConversationId) {
-        onSelectConversation(null);
-      }
-    } catch (error) {
-      console.error('Error deleting conversation:', error);
+  const handleDelete = (id) => {
+    if (window.confirm('Bu konuşmayı silmek istediğinizden emin misiniz?')) {
+      onDeleteConversation(id)
     }
-  };
+    setMenuOpenId(null)
+  }
 
-  const handleRenameConversation = async (conversationId, newTitle) => {
-    try {
-      await fetch(`/api/conversations/${conversationId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ title: newTitle })
-      });
-
-      setConversations(prev =>
-        prev.map(c => c.id === conversationId ? { ...c, title: newTitle } : c)
-      );
-    } catch (error) {
-      console.error('Error renaming conversation:', error);
-    }
-  };
-
-  const filteredConversations = conversations.filter(conversation =>
-    conversation.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const groupConversationsByDate = (conversations) => {
-    const groups = {
-      today: [],
-      yesterday: [],
-      thisWeek: [],
-      thisMonth: [],
-      older: []
-    };
-
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const weekAgo = new Date(today);
-    weekAgo.setDate(weekAgo.getDate() - 7);
-    const monthAgo = new Date(today);
-    monthAgo.setMonth(monthAgo.getMonth() - 1);
-
-    conversations.forEach(conversation => {
-      const date = new Date(conversation.updatedAt);
-      
-      if (date >= today) {
-        groups.today.push(conversation);
-      } else if (date >= yesterday) {
-        groups.yesterday.push(conversation);
-      } else if (date >= weekAgo) {
-        groups.thisWeek.push(conversation);
-      } else if (date >= monthAgo) {
-        groups.thisMonth.push(conversation);
-      } else {
-        groups.older.push(conversation);
-      }
-    });
-
-    return groups;
-  };
-
-  const renderConversationGroup = (title, conversations) => {
-    if (conversations.length === 0) return null;
-
+  // Kapalı hali (Collapsed)
+  if (isCollapsed) {
     return (
-      <div className="conversation-group" key={title}>
-        <h3 className="group-title">{title}</h3>
-        <div className="group-items">
-          {conversations.map(conversation => (
-            <ConversationItem
-              key={conversation.id}
-              conversation={conversation}
-              isActive={conversation.id === activeConversationId}
-              onClick={() => handleSelectConversation(conversation)}
-              onDelete={handleDeleteConversation}
-              onRename={handleRenameConversation}
-            />
-          ))}
-        </div>
+      <div className="w-12 h-full flex flex-col items-center py-4 bg-transparent border-r">
+        <button
+          onClick={() => setIsCollapsed(false)}
+          className="p-2 hover:bg-gray-200 rounded-lg text-gray-600"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
       </div>
-    );
-  };
-
-  const groupedConversations = groupConversationsByDate(filteredConversations);
+    )
+  }
 
   return (
-    <div className={`conversation-list-sidebar ${isCollapsed ? 'collapsed' : ''}`}>
-      <div className="sidebar-header">
-        <div className="sidebar-brand">
-          <div className="brand-icon">Z</div>
-          {!isCollapsed && <span className="brand-name">Zeta AI</span>}
-        </div>
-        
+    // bg-transparent yaptık ki App.jsx'teki görsel rengi (krem) görünsün
+    <div className="w-64 flex flex-col h-full bg-transparent text-gray-800">
+      {/* Header */}
+      <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+        <h2 className="font-semibold text-gray-700">Sohbetler</h2>
         <button
-          className="collapse-button"
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          title={isCollapsed ? 'Genişlet' : 'Daralt'}
+          onClick={() => setIsCollapsed(true)}
+          className="p-1 hover:bg-gray-200 rounded text-gray-500"
         >
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-            {isCollapsed ? (
-              <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd"/>
-            ) : (
-              <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"/>
-            )}
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
       </div>
 
-      {!isCollapsed && (
-        <>
-          <div className="sidebar-actions">
-            <button className="new-chat-button" onClick={handleNewConversation}>
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd"/>
-              </svg>
-              <span>Yeni Konuşma</span>
-            </button>
+      {/* New Chat Button */}
+      <div className="p-3">
+        <button
+          onClick={onNewConversation}
+          className="w-full px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex items-center justify-center gap-2 transition-colors shadow-sm"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          <span>Yeni Sohbet</span>
+        </button>
+      </div>
 
-            <div className="search-box">
-              <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" className="search-icon">
-                <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd"/>
-              </svg>
-              <input
-                type="text"
-                placeholder="Konuşmalarda ara..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="search-input"
-              />
-              {searchQuery && (
+      {/* Conversations List */}
+      <div className="flex-1 overflow-y-auto px-2">
+        {conversations.length === 0 ? (
+          <div className="text-center text-gray-400 py-8 text-sm">
+            Henüz sohbet yok
+          </div>
+        ) : (
+          conversations.map((conv) => (
+            <div
+              key={conv.id}
+              className={`group relative mb-1 rounded-lg cursor-pointer transition-colors ${
+                currentConversationId === conv.id
+                  ? 'bg-indigo-50 border border-indigo-100'
+                  : 'hover:bg-gray-200/50'
+              }`}
+              onClick={() => onSelectConversation(conv.id)}
+            >
+              <div className="p-3 flex items-start gap-2">
+                {/* Icon */}
+                <svg className="w-5 h-5 mt-0.5 flex-shrink-0 text-indigo-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd"/>
+                </svg>
+
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  {editingId === conv.id ? (
+                    <input
+                      type="text"
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      onBlur={() => handleRename(conv.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleRename(conv.id)
+                        if (e.key === 'Escape') setEditingId(null)
+                      }}
+                      className="w-full bg-white border border-indigo-300 text-gray-800 px-2 py-1 rounded text-sm focus:outline-none"
+                      autoFocus
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  ) : (
+                    <>
+                      <h3 className={`text-sm font-medium truncate ${currentConversationId === conv.id ? 'text-indigo-700' : 'text-gray-700'}`}>
+                        {conv.title}
+                      </h3>
+                      <p className="text-xs text-gray-400">{formatDate(conv.updatedAt)}</p>
+                    </>
+                  )}
+                </div>
+
+                {/* Menu Button */}
                 <button
-                  className="clear-search"
-                  onClick={() => setSearchQuery('')}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setMenuOpenId(menuOpenId === conv.id ? null : conv.id)
+                  }}
+                  className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-200 rounded transition-opacity text-gray-400"
                 >
-                  <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"/>
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 16 16">
+                    <circle cx="8" cy="3" r="1.5"/>
+                    <circle cx="8" cy="8" r="1.5"/>
+                    <circle cx="8" cy="13" r="1.5"/>
                   </svg>
                 </button>
-              )}
-            </div>
-          </div>
 
-          <div className="conversations-container">
-            {isLoading ? (
-              <div className="loading-state">
-                <div className="loading-spinner">
-                  <div className="spinner-dot"></div>
-                  <div className="spinner-dot"></div>
-                  <div className="spinner-dot"></div>
-                </div>
-                <p>Konuşmalar yükleniyor...</p>
-              </div>
-            ) : filteredConversations.length === 0 ? (
-              <div className="empty-state">
-                {searchQuery ? (
-                  <>
-                    <svg width="48" height="48" viewBox="0 0 20 20" fill="currentColor" className="empty-icon">
-                      <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd"/>
-                    </svg>
-                    <p>Konuşma bulunamadı</p>
-                  </>
-                ) : (
-                  <>
-                    <svg width="48" height="48" viewBox="0 0 20 20" fill="currentColor" className="empty-icon">
-                      <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd"/>
-                    </svg>
-                    <p>Henüz konuşma yok</p>
-                    <p className="empty-hint">Yeni bir konuşma başlatın</p>
-                  </>
+                {/* Dropdown Menu */}
+                {menuOpenId === conv.id && (
+                  <div 
+                    className="absolute right-2 top-12 bg-white border border-gray-200 rounded-lg shadow-xl z-10 py-1 min-w-[160px]"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      onClick={() => {
+                        setEditTitle(conv.title)
+                        setEditingId(conv.id)
+                        setMenuOpenId(null)
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                    >
+                      <svg className="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/>
+                      </svg>
+                      Yeniden adlandır
+                    </button>
+                    <button
+                      onClick={() => handleDelete(conv.id)}
+                      className="w-full px-4 py-2 text-left text-sm text-red-500 hover:bg-red-50 flex items-center gap-2"
+                    >
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd"/>
+                      </svg>
+                      Sil
+                    </button>
+                  </div>
                 )}
               </div>
-            ) : (
-              <>
-                {renderConversationGroup('Bugün', groupedConversations.today)}
-                {renderConversationGroup('Dün', groupedConversations.yesterday)}
-                {renderConversationGroup('Bu Hafta', groupedConversations.thisWeek)}
-                {renderConversationGroup('Bu Ay', groupedConversations.thisMonth)}
-                {renderConversationGroup('Daha Eski', groupedConversations.older)}
-              </>
-            )}
-          </div>
-        </>
-      )}
+            </div>
+          ))
+        )}
+      </div>
     </div>
-  );
-};
+  )
+}
 
-export default ConversationList;
+export default ConversationList

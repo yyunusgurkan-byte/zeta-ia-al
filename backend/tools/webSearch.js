@@ -1,55 +1,58 @@
-// 🌐 WEB SEARCH TOOL
-// Google arama yapar (Ücretsiz DuckDuckGo API kullanarak)
-
+// 🌐 WEB SEARCH TOOL - SerpAPI
 const axios = require('axios');
 
 module.exports = {
   name: 'webSearch',
-  description: 'Web üzerinde arama yapar',
-
-  /**
-   * Web araması yap
-   * @param {Object} params - { query: string }
-   */
+  description: 'Web üzerinde güncel arama yapar (SerpAPI)',
+  
   async execute({ query }) {
     try {
-      console.log(`🌐 Web searching: "${query}"`);
-
-      // DuckDuckGo Instant Answer API (ücretsiz, API key gerektirmez)
-      const ddgUrl = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json`;
+      console.log(`🌐 SerpAPI searching: "${query}"`);
       
-      const response = await axios.get(ddgUrl, {
-        timeout: 5000,
-        headers: {
-          'User-Agent': 'ZetaAI/1.0'
-        }
+      const SERP_API_KEY = process.env.SERP_API_KEY;
+      
+      if (!SERP_API_KEY) {
+        return {
+          success: false,
+          error: 'SERP_API_KEY tanımlı değil'
+        };
+      }
+
+      const response = await axios.get('https://serpapi.com/search', {
+        params: {
+          q: query,
+          api_key: SERP_API_KEY,
+          engine: 'google',
+          hl: 'tr',
+          gl: 'tr',
+          num: 5
+        },
+        timeout: 10000
       });
 
       const data = response.data;
-
-      // RelatedTopics'ten sonuçları topla
       const results = [];
 
-      if (data.AbstractText) {
-        results.push({
-          title: data.Heading || query,
-          snippet: data.AbstractText,
-          url: data.AbstractURL || null,
-          source: 'DuckDuckGo'
+      // Organic results
+      if (data.organic_results && data.organic_results.length > 0) {
+        data.organic_results.forEach(result => {
+          results.push({
+            title: result.title,
+            snippet: result.snippet || result.description || '',
+            url: result.link,
+            source: 'Google'
+          });
         });
       }
 
-      // Related topics ekle
-      if (data.RelatedTopics && data.RelatedTopics.length > 0) {
-        data.RelatedTopics.slice(0, 5).forEach(topic => {
-          if (topic.Text && topic.FirstURL) {
-            results.push({
-              title: topic.Text.substring(0, 100),
-              snippet: topic.Text,
-              url: topic.FirstURL,
-              source: 'DuckDuckGo'
-            });
-          }
+      // Answer box
+      if (data.answer_box) {
+        const box = data.answer_box;
+        results.unshift({
+          title: box.title || 'Hızlı Yanıt',
+          snippet: box.answer || box.snippet || '',
+          url: box.link || '',
+          source: 'Google Answer Box'
         });
       }
 
@@ -70,10 +73,10 @@ module.exports = {
       };
 
     } catch (error) {
-      console.error('❌ Web search error:', error.message);
+      console.error('❌ SerpAPI error:', error.message);
       return {
         success: false,
-        error: 'Arama yapılamadı'
+        error: 'Arama yapılamadı: ' + error.message
       };
     }
   }

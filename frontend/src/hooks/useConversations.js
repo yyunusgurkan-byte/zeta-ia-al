@@ -1,101 +1,88 @@
+// frontend/src/hooks/useConversations.js
 import { useState, useEffect, useCallback } from 'react';
-import {
-  getConversations,
-  getConversation,
-  createConversation,
-  updateConversation,
-  deleteConversation as deleteConversationAPI
-} from '../services/api';
+
+const STORAGE_KEY = 'zeta-conversations';
 
 export const useConversations = () => {
-  const [conversations, setConversations] = useState([]);
+  const [conversations, setConversations] = useState(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved ? JSON.parse(saved) : [];
+  });
+  
   const [currentConversation, setCurrentConversation] = useState(null);
-  const [currentConversationId, setCurrentConversationId] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
 
-  const loadConversations = useCallback(async () => {
-    if (loading) return; 
-    
-    setLoading(true);
-    setError(null);
+  // Kayıt işlemi: Boş olsa bile kaydet ki senkronizasyon kopmasın
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations));
+  }, [conversations]);
 
-    try {
-      const response = await getConversations();
-      if (response && response.success) {
-        setConversations(response.conversations || []);
-      }
-    } catch (err) {
-      setError(err.message);
-      console.error('Konuşmalar yüklenemedi:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [loading]);
-
-  const startNewConversation = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await createConversation();
-      if (response && response.success) {
-        setCurrentConversation(response.conversation);
-        setCurrentConversationId(response.conversation.id);
-        const listRes = await getConversations();
-        if (listRes.success) setConversations(listRes.conversations || []);
-      }
-    } catch (err) {
-      setError(err.message);
-      console.error('Yeni konuşma oluşturulamadı:', err);
-    } finally {
-      setLoading(false);
-    }
+  const createConversation = useCallback(async (title = 'Yeni Sohbet') => {
+    const newConv = {
+      id: Date.now().toString(),
+      title,
+      messages: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    setConversations(prev => [newConv, ...prev]);
+    setCurrentConversation(newConv);
+    return newConv;
   }, []);
 
+  // KRİTİK DÜZELTME: Fonksiyonel güncelleme (prev => ...) kullanıldı
   const addMessageToConversation = useCallback((message) => {
-    if (!currentConversation) return;
+    setCurrentConversation(prevCurrent => {
+      if (!prevCurrent) return prevCurrent;
 
-    const updatedConversation = {
-      ...currentConversation,
-      messages: [...(currentConversation.messages || []), message]
-    };
+      const updated = {
+        ...prevCurrent,
+        messages: [...(prevCurrent.messages || []), message],
+        updatedAt: new Date().toISOString()
+      };
 
-    setCurrentConversation(updatedConversation);
+      // İlk mesajda başlığı değiştir
+      if (updated.title === 'Yeni Sohbet' && message.role === 'user') {
+        updated.title = message.content.slice(0, 30);
+      }
 
-    updateConversation(
-      currentConversation.id, 
-      updatedConversation.messages,
-      currentConversation.title
-    ).catch(err => console.error('Mesaj kaydetme hatası:', err));
+      // SIDEBAR'I GÜNCELLEMEYE ZORLA
+      setConversations(prevList => {
+        const filtered = prevList.filter(c => c.id !== updated.id);
+        return [updated, ...filtered];
+      });
+
+      return updated;
+    });
+  }, []); // Bağımlılık boşaltıldı!
+
+  const loadConversation = useCallback((id) => {
+    const found = conversations.find(c => c.id === id);
+    if (found) setCurrentConversation(found);
+  }, [conversations]);
+
+  const deleteConversation = useCallback((id) => {
+    setConversations(prev => prev.filter(c => c.id !== id));
+    if (currentConversation?.id === id) setCurrentConversation(null);
   }, [currentConversation]);
 
-  useEffect(() => {
-    loadConversations();
-  }, []); 
-
-  useEffect(() => {
-    const shouldStartNew = 
-      !loading && 
-      !error && 
-      conversations.length === 0 && 
-      !currentConversation;
-
-    if (shouldStartNew) {
-      startNewConversation();
+  const renameConversation = useCallback((id, newTitle) => {
+    setConversations(prev => 
+      prev.map(c => c.id === id ? { ...c, title: newTitle, updatedAt: new Date().toISOString() } : c)
+    );
+    if (currentConversation?.id === id) {
+      setCurrentConversation(prev => ({ ...prev, title: newTitle }));
     }
-  }, [conversations.length, currentConversation, loading, error, startNewConversation]);
+  }, [currentConversation]);
 
-  return {
-    conversations,
-    currentConversation,
-    currentConversationId,
-    loading,
-    error,
-    loadConversations,
-    startNewConversation,
-    addMessageToConversation,
-    setCurrentConversation,
-    setCurrentConversationId
+  return { 
+    conversations, 
+    currentConversation, 
+    createConversation, 
+    loadConversation, 
+    deleteConversation,
+    renameConversation,
+    addMessageToConversation 
   };
 };
+
+export default useConversations;

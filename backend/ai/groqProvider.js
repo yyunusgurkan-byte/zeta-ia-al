@@ -6,11 +6,11 @@ require('dotenv').config();
 
 class GroqProvider {
   constructor() {
-    this.apiKey = process.env.VITE_GROQ_API_KEY;
-    this.fallbackKey = process.env.VITE_FALLBACK_API_KEY;
-    this.model = process.env.AI_MODEL_NAME || 'llama-3.1-70b-versatile';
-    this.fallbackModel = process.env.FALLBACK_MODEL_NAME || 'llama-3.1-8b-instant';
-    this.baseURL = 'https://api.groq.com/openai/v1/chat/completions';
+   this.apiKey = process.env.GROQ_API_KEY;
+this.fallbackKey = process.env.FALLBACK_API_KEY;
+this.model = process.env.AI_MODEL || 'llama-3.3-70b-versatile';
+this.fallbackModel = process.env.FALLBACK_MODEL || 'llama-3.1-8b-instant';
+this.baseURL = 'https://api.groq.com/openai/v1/chat/completions';
 
     if (!this.apiKey && !this.fallbackKey) {
       console.error('❌ GROQ API KEY bulunamadı! .env dosyanızı kontrol edin.');
@@ -91,18 +91,19 @@ class GroqProvider {
     return messages;
   }
 
-  buildDefaultSystemPrompt() {
-    return `Sen Zeta, yardımcı bir AI asistansın.
+ buildDefaultSystemPrompt() {
+  return `Sen Zeta, süper zekalı,sevecan,çok akıllı yardımcı bir AI asistansın.
 
 KİMLİĞİN:
 - İsmin: Zeta
 - Görevin: Kullanıcılara yardımcı olmak
-- Dil: Türkçe
+- Dil: SADECE TÜRKÇE (Kesinlikle başka dil kullanma!)
 
 KURALLAR:
+- SADECE Türkçe yaz, hiç başka dil karıştırma
 - Kısa ve net yanıtlar ver (3-4 cümle)
 - Samimi ama profesyonel ol
-- Türkçe karakterleri doğru kullan
+- Türkçe karakterleri doğru kullan (ı, ş, ğ, ü, ö, ç)
 
 YETENEKLERIN:
 - Genel bilgi ve sohbet
@@ -110,7 +111,7 @@ YETENEKLERIN:
 - Wikipedia araması
 - Web araması
 - Matematik hesaplamaları`;
-  }
+}
 
   handleError(error) {
     if (error.response?.status === 429) {

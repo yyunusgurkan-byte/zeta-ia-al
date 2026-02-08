@@ -18,8 +18,15 @@ require('dotenv').config();
 // MIDDLEWARE
 // ====================================================================
 app.use(cors({
-  origin: ['http://www.alzeta.site', 'http://alzeta.site', 'https://www.alzeta.site', 'https://alzeta.site'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Bu satırı ekle!
+  origin: [
+    'http://www.alzeta.site', 
+    'http://alzeta.site', 
+    'https://www.alzeta.site', 
+    'https://alzeta.site',
+    'http://localhost:5173',        // ← LOCAL DEV İÇİN EKLE
+    'http://localhost:3000'         // ← EKSTRA
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));

@@ -86,19 +86,22 @@ class ZetaOrchestrator {
     const lowerInput = userMessage.toLowerCase();
 
     // ⚽ SPOR SORGUSU
-    const sportsKeywords = [
-      'galatasaray', 'fenerbahçe', 'beşiktaş', 'trabzonspor',
-      'süper lig', 'puan durumu', 'puan tablosu', 'sıralama',
-      'maç', 'gol', 'skor', 'futbol'
-    ];
+    // ⚽ SPOR SORGUSU - DEVRE DIŞI
+/*
+const sportsKeywords = [
+  'galatasaray', 'fenerbahçe', 'beşiktaş', 'trabzonspor',
+  'süper lig', 'puan durumu', 'puan tablosu', 'sıralama',
+  'maç', 'gol', 'skor', 'futbol'
+];
 
-    if (sportsKeywords.some(k => lowerInput.includes(k))) {
-      return {
-        useTool: true,
-        toolName: 'tffSports',
-        params: { query: userMessage }
-      };
-    }
+if (sportsKeywords.some(k => lowerInput.includes(k))) {
+  return {
+    useTool: true,
+    toolName: 'tffSports',
+    params: { query: userMessage }
+  };
+}
+*/
 
     // 🌤️ HAVA DURUMU
     const weatherKeywords = ['hava durumu', 'sıcaklık', 'weather', 'derece'];
