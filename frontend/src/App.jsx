@@ -92,7 +92,7 @@ function App() {
       <div className="flex-1 flex flex-col h-full min-w-0 bg-white">
 
         {/* Header */}
-        <header className="bg-gray-100 text-white px-4 md:px-6 py-2 shadow-lg flex-shrink-0 relative">
+        <header className="bg-gray-50 text-white px-4 md:px-6 py-2 shadow-lg flex-shrink-0 relative">
           <div className="max-w-6xl mx-auto flex justify-between items-center">
             
             {/* Mobilde Menü Butonu */}
@@ -116,29 +116,48 @@ function App() {
               </div>
               
               <div className="hidden sm:flex flex-col -ml-6">
-                <div className="flex items-center gap-1.5 bg-indigo-900/30 px-3 py-1 rounded-full border border-indigo-400/20">
+                <div className="flex items-center gap-1.5 bg-gray-900/80 px-3 py-1 rounded-full border border-white-900/20">
                   <span className={`w-2 h-2 rounded-full animate-pulse ${healthStatus?.status === 'healthy' ? 'bg-green-400' : 'bg-red-500'}`}></span>
-                  <span className="text-[10px] text-indigo-100 font-bold uppercase tracking-tighter">
+                  <span className="text-[10px] text-black-900 font-bold uppercase tracking-tighter">
                     {healthStatus?.status === 'healthy' ? 'ONLINE' : 'OFFLINE'}
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* Sağ Taraf: TTS Butonu */}
-            <button
-              onClick={toggleSpeech}
-              className={`flex items-center gap-2 md:gap-3 px-3 md:px-6 py-2 md:py-3 rounded-xl md:rounded-2xl font-bold transition-all shadow-xl active:scale-95 border-b-2 md:border-b-4 ${
-                isEnabled 
-                  ? 'bg-green-600 border-green-800 hover:bg-green-500' 
-                  : 'bg-red-600 border-red-800 hover:bg-red-500'
-              }`}
-            >
-              <span className="text-lg md:text-xl">{isEnabled ? '🔊' : '🔇'}</span>
-              <span className="hidden xs:inline tracking-wide text-xs md:text-base">
-                TTS {isEnabled ? 'AÇIK' : 'KAPALI'}
-              </span>
-            </button>
+            {/* Sağ Taraf: TTS Toggle Switch */}
+            <div className="flex items-center gap-3">
+              <span className="hidden sm:inline text-xs font-medium text-gray-900">Sesli Yanıt</span>
+              <button
+                onClick={toggleSpeech}
+                className={`relative inline-flex h-8 w-14 items-center rounded-full transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
+                  isEnabled 
+                    ? 'bg-gradient-to-r from-red-500 to-green-600 shadow-lg shadow-red-500/50' 
+                    : 'bg-red-700'
+                }`}
+              >
+                <span className="sr-only">TTS Toggle</span>
+                <span
+                  className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-lg transition-all duration-300 ease-in-out ${
+                    isEnabled ? 'translate-x-7' : 'translate-x-1'
+                  }`}
+                >
+                  <svg 
+                    className={`h-6 w-6 p-1 transition-colors duration-300 ${
+                      isEnabled ? 'text-indigo-600' : 'text-gray-400'
+                    }`} 
+                    fill="currentColor" 
+                    viewBox="0 0 20 20"
+                  >
+                    {isEnabled ? (
+                      <path d="M10 3.75a.75.75 0 00-1.264-.546L5.203 6H2.667a.75.75 0 00-.75.75v6.5c0 .414.336.75.75.75h2.536l3.533 2.796A.75.75 0 0010 16.25V3.75zM11.25 7a.75.75 0 011.28-.53 5 5 0 010 7.06.75.75 0 11-1.28-.53 3.5 3.5 0 000-6zm2.47-2.47a.75.75 0 011.06 0 8 8 0 010 11.314.75.75 0 01-1.06-1.06 6.5 6.5 0 000-9.194.75.75 0 010-1.06z"/>
+                    ) : (
+                      <path d="M10.047 3.062a.75.75 0 01.453.688v12.5a.75.75 0 01-1.264.546L5.703 13.5H3.167a.75.75 0 01-.7-.48L1.5 9.75a.75.75 0 01.7-1.02h2.036l3.533-3.296a.75.75 0 01.81-.142zM13.78 7.22a.75.75 0 10-1.06 1.06L14.44 10l-1.72 1.72a.75.75 0 101.06 1.06l1.72-1.72 1.72 1.72a.75.75 0 101.06-1.06L16.56 10l1.72-1.72a.75.75 0 00-1.06-1.06L15.5 8.94l-1.72-1.72z"/>
+                    )}
+                  </svg>
+                </span>
+              </button>
+            </div>
           </div>
         </header>
 
