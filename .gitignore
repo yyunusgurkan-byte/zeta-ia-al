@@ -4,6 +4,7 @@
 backend/.env
 frontend/.env
 deploy/backend/.env
+frontend/env
 
 # Node modules
 node_modules/
