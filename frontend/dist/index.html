@@ -48,7 +48,10 @@
     
     <!-- Environment Config -->
     <script>
-      window.VITE_API_URL = 'https://zeta-backend-production.up.railway.app';
+      // HTTP/HTTPS uyumlu API URL
+      window.VITE_API_URL = window.location.protocol === 'https:' 
+        ? 'https://zeta-backend-production.up.railway.app'
+        : 'http://zeta-backend-production.up.railway.app';
     </script>
     <script type="module" crossorigin src="/assets/index-QiQT5mR4.js"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-DWDyL-gj.css">
