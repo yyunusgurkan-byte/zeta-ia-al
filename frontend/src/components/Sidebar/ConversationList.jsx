@@ -145,18 +145,19 @@ const ConversationList = ({
 
                 {/* Menu Button */}
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setMenuOpenId(menuOpenId === conv.id ? null : conv.id)
-                  }}
-                  className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-200 rounded transition-opacity text-gray-400"
-                >
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 16 16">
-                    <circle cx="8" cy="3" r="1.5"/>
-                    <circle cx="8" cy="8" r="1.5"/>
-                    <circle cx="8" cy="13" r="1.5"/>
-                  </svg>
-                </button>
+  onClick={(e) => {
+    e.stopPropagation()
+    setMenuOpenId(menuOpenId === conv.id ? null : conv.id)
+  }}
+  // text-black ekledik ve opacity'yi artırdık
+  className="opacity-60 group-hover:opacity-100 p-1 hover:bg-gray-200 rounded transition-opacity text-black"
+>
+  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 16 16">
+    <circle cx="8" cy="3" r="1.5"/>
+    <circle cx="8" cy="8" r="1.5"/>
+    <circle cx="8" cy="13" r="1.5"/>
+  </svg>
+</button>
 
                 {/* Dropdown Menu */}
                 {menuOpenId === conv.id && (

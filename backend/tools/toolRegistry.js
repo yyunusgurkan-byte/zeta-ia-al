@@ -18,7 +18,9 @@ class ToolRegistry {
     this.register('wikipedia', require('./wikipedia'));
     this.register('weather', require('./weather'));
     this.register('calculator', require('./calculator'));
+    this.register('apiFootball', require('./apiFootball'));
     // this.register('tffSports', require('./tffSports')); ← Yorum satırı yaptık
+
     
     console.log(`✅ ${this.tools.size} tools registered successfully`);
   } catch (error) {
