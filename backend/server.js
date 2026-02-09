@@ -1,12 +1,13 @@
 // 🚀 ZETA AI - BACKEND SERVER
 const express = require('express');
 const cors = require('cors');
-const path = require('path'); // Dosya yolları için eklendi
+const path = require('path');
 const { chatLimiter } = require('./middleware/rateLimiter');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 const chatRoutes = require('./routes/chat');
 const conversationRoutes = require('./routes/conversation');
 const healthRoutes = require('./routes/health');
+const uploadRoutes = require('./routes/upload'); // ← YENİ
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -28,8 +29,8 @@ app.use(cors({
     'http://alzeta.site', 
     'https://www.alzeta.site', 
     'https://alzeta.site',
-    'http://localhost:5173',        // ← LOCAL DEV İÇİN EKLE
-    'http://localhost:3000'         // ← EKSTRA
+    'http://localhost:5173',
+    'http://localhost:3000'
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true
@@ -37,9 +38,11 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// 📂 STATIK DOSYA SUNUMU (Frontend için eklendi)
-// api klasörü içinde olduğun için bir üst dizine (httpdocs) bakıyoruz
+// 📂 STATIK DOSYA SUNUMU (Frontend için)
 app.use(express.static(path.join(__dirname, '../')));
+
+// 📁 Upload klasörünü statik olarak servis et
+app.use('/uploads', express.static(path.join(__dirname, 'storage/uploads'))); // ← YENİ
 
 // Request logging
 app.use((req, res, next) => {
@@ -52,9 +55,10 @@ app.use((req, res, next) => {
 // ====================================================================
 app.use('/api/chat', chatLimiter, chatRoutes);
 app.use('/api/conversations', conversationRoutes);
+app.use('/api/upload', uploadRoutes); // ← YENİ
 app.use('/health', healthRoutes);
 
-// Root endpoint (Backend durum kontrolü için alt yolda tutuldu)
+// Root endpoint
 app.get('/api/status', (req, res) => {
   res.json({
     service: 'Zeta AI Backend',
@@ -63,7 +67,7 @@ app.get('/api/status', (req, res) => {
   });
 });
 
-// 🌐 FRONTEND YONLENDIRMESI (Kritik: Ana sayfa artık siteyi açar)
+// 🌐 FRONTEND YONLENDIRMESI
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../index.html'));
 });
