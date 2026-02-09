@@ -36,17 +36,14 @@ function App() {
 
     const reader = new FileReader();
 
-    // Dosya okuma işlemi bittiğinde çalışır
     reader.onload = async (event) => {
       const fileContent = event.target.result;
       
-      // 1. Kullanıcı mesajı olarak dosyayı ekrana bas
       addMessageToConversation({ 
         role: 'user', 
         content: `🔍 "${file.name}" dosyasını yükledim. Lütfen bu kodu analiz et ve hataları listele.` 
       });
 
-      // 2. Zeta'ya gidecek teknik komut
       const analysisPrompt = `Aşağıdaki kodu analiz et. Varsa hataları listele ve iyileştirme önerileri sun:
       
       Dosya Adı: ${file.name}
@@ -55,7 +52,6 @@ function App() {
       ${fileContent}
       \`\`\``;
 
-      // 3. Mevcut sohbet yoksa oluştur, varsa gönder
       let activeConv = currentConversation;
       if (!activeConv) {
         activeConv = await createConversation(`${file.name} Analizi`);
@@ -69,10 +65,7 @@ function App() {
       }
     };
 
-    // Dosyayı düz metin olarak oku
     reader.readAsText(file);
-    
-    // Input'u temizle (aynı dosya tekrar seçilebilsin diye)
     e.target.value = null;
   };
 
@@ -170,24 +163,47 @@ function App() {
               </div>
             </div>
 
-            <button
-              onClick={toggleSpeech}
-              className={`relative w-20 h-10 flex items-center rounded-full p-1 transition-all duration-500 shadow-inner ${
-                isEnabled ? 'bg-gradient-to-r from-green-400 to-green-600' : 'bg-gray-300'
-              }`}
-            >
-              <div
-                className={`absolute w-8 h-8 bg-white rounded-full shadow-lg transform transition-transform duration-500 flex items-center justify-center text-sm ${
-                  isEnabled ? 'translate-x-10' : 'translate-x-0'
+            {/* HEADER KONTROLLERİ */}
+            <div className="flex items-center gap-3">
+              {/* DOSYA YÜKLEME (HEADER) */}
+              <input 
+                type="file" 
+                id="header-file-upload" 
+                className="hidden" 
+                onChange={handleFileUpload} 
+                accept=".js,.jsx,.ts,.tsx,.css,.html,.json"
+              />
+              <button
+                type="button"
+                onClick={() => document.getElementById('header-file-upload').click()}
+                className="p-2 bg-black hover:bg-gray-700 text-white rounded-lg transition-all border border-gray-600 shadow-md active:scale-95"
+                title="Dosya Yükle"
+              >
+                <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+              </button>
+
+              {/* TTS BUTONU */}
+              <button
+                onClick={toggleSpeech}
+                className={`relative w-16 h-8 md:w-20 md:h-10 flex items-center rounded-full p-1 transition-all duration-500 shadow-inner ${
+                  isEnabled ? 'bg-gradient-to-r from-green-400 to-green-600' : 'bg-gray-300'
                 }`}
               >
-                {isEnabled ? '🔊' : '🔇'}
-              </div>
-              <div className={`w-full flex justify-between px-2 text-[10px] font-black pointer-events-none ${isEnabled ? 'text-white' : 'text-gray-500'}`}>
-                <span className={isEnabled ? 'opacity-100' : 'opacity-0'}>ON</span>
-                <span className={isEnabled ? 'opacity-0' : 'opacity-100'}>OFF</span>
-              </div>
-            </button>
+                <div
+                  className={`absolute w-6 h-6 md:w-8 md:h-8 bg-white rounded-full shadow-lg transform transition-transform duration-500 flex items-center justify-center text-[10px] md:text-sm ${
+                    isEnabled ? 'translate-x-8 md:translate-x-10' : 'translate-x-0'
+                  }`}
+                >
+                  {isEnabled ? '🔊' : '🔇'}
+                </div>
+                <div className={`w-full flex justify-between px-2 text-[8px] md:text-[10px] font-black pointer-events-none ${isEnabled ? 'text-white' : 'text-gray-500'}`}>
+                  <span className={isEnabled ? 'opacity-100' : 'opacity-0'}>ON</span>
+                  <span className={isEnabled ? 'opacity-0' : 'opacity-100'}>OFF</span>
+                </div>
+              </button>
+            </div>
           </div>
         </header>
 
@@ -225,50 +241,27 @@ function App() {
           </div>
         </main>
 
-        {/* Input & Upload */}
+        {/* Input Only Footer */}
         <footer className="bg-white border-t p-4 flex-shrink-0">
           <form onSubmit={handleSend} className="max-w-4xl mx-auto">
-            <div className="relative flex items-center gap-2">
-              
-              {/* DOSYA YÜKLEME BUTONU */}
-              <input 
-                type="file" 
-                id="file-upload" 
-                className="hidden" 
-                onChange={handleFileUpload} 
-                accept=".js,.jsx,.ts,.tsx,.css,.html,.json"
+            <div className="relative flex items-center">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Mesajınızı yazın..."
+                className="w-full px-4 py-3 pr-12 border-2 border-gray-400 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 bg-white placeholder-black text-black font-medium"
+                disabled={loading}
               />
               <button
-                type="button"
-                onClick={() => document.getElementById('file-upload').click()}
-                className="flex-shrink-0 p-3 bg-black text-white rounded-xl hover:bg-gray-800 transition-all shadow-md active:scale-95"
-                title="Dosya Yükle ve Analiz Et"
+                type="submit"
+                disabled={loading || !input.trim()}
+                className="absolute right-2 top-2 p-1.5 bg-black text-white rounded-lg hover:bg-gray-800 disabled:bg-red-900 transition-all"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                 </svg>
               </button>
-
-              {/* MESAJ ALANI */}
-              <div className="relative flex-1">
-                <input
-                  type="text"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder="Hata analizi için dosya yükleyin veya yazın..."
-                  className="w-full px-4 py-3 pr-12 border-2 border-gray-400 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 bg-white placeholder-black text-black font-medium"
-                  disabled={loading}
-                />
-                <button
-                  type="submit"
-                  disabled={loading || !input.trim()}
-                  className="absolute right-2 top-2 p-1.5 bg-black text-white rounded-lg hover:bg-gray-800 disabled:bg-gray-400 transition-all"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                  </svg>
-                </button>
-              </div>
             </div>
             {error && <p className="mt-2 text-red-500 text-sm">❌ {error}</p>}
           </form>
