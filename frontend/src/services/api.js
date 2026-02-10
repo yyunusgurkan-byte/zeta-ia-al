@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'https://zeta-ai-backend-production.up.railway.app';
+const API_URL = 'http://localhost:3001';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -56,6 +56,36 @@ export const deleteConversation = async (id) => {
 export const checkHealth = async () => {
   const response = await api.get('/health');
   return response.data;
+};
+
+     const handleImageUpload = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  setImageUploading(true);
+  const formData = new FormData();
+  formData.append('image', file);
+
+  try {
+    // Kendi api servisimiz üzerinden gönderelim (CORS ve base_url yönetimi daha kolay olur)
+    const response = await api.post('/api/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+
+    if (response.data.success) {
+      addMessageToConversation({
+        role: 'assistant',
+        content: response.data.analysis || '✅ Resim yüklendi ve analiz edildi.'
+      });
+    }
+  } catch (err) {
+    addMessageToConversation({
+      role: 'assistant',
+      content: `❌ Hata: ${err.response?.data?.message || err.message}`
+    });
+  } finally {
+    setImageUploading(false);
+  }
 };
 
 export default api;

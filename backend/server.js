@@ -7,7 +7,7 @@ const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 const chatRoutes = require('./routes/chat');
 const conversationRoutes = require('./routes/conversation');
 const healthRoutes = require('./routes/health');
-const uploadRoutes = require('./routes/upload'); // ← Tanımla
+const uploadRoutes = require('./routes/upload'); // ← YENİ
 
 const app = express();
 const PORT = process.env.PORT || 3001;

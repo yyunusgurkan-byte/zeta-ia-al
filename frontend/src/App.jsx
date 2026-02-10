@@ -191,7 +191,7 @@ function App() {
       <div className="flex-1 flex flex-col h-full min-w-0 bg-white">
 
         {/* Header */}
-        <header className="bg-gray-50 text-white px-4 md:px-6 py-2 shadow-lg flex-shrink-0 relative">
+        <header className="bg-gray-900 text-white px-4 md:px-6 py-2 shadow-lg flex-shrink-0 relative">
           <div className="max-w-6xl mx-auto flex justify-between items-center">
 
             <button
@@ -273,13 +273,13 @@ function App() {
 
               {/* Sağ Taraf: TTS Toggle Switch */}
               <div className="flex items-center gap-3">
-                <span className="hidden sm:inline text-xs font-medium text-gray-600">Sesli Yanıt</span>
+                <span className="hidden sm:inline text-xs font-medium text-gray-900">Sesli Yanıt</span>
                 <button
                   onClick={toggleSpeech}
                   className={`relative inline-flex h-8 w-14 items-center rounded-full transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
                     isEnabled 
-                      ? 'bg-gradient-to-r from-indigo-500 to-indigo-600 shadow-lg shadow-indigo-500/50' 
-                      : 'bg-gray-300'
+                      ? 'bg-gradient-to-r from-green-700 to-green-600 shadow-lg shadow-indigo-500/50' 
+                      : 'bg-red-900'
                   }`}
                 >
                   <span className="sr-only">TTS Toggle</span>
@@ -314,7 +314,7 @@ function App() {
             {messages.length === 0 && (
               <div className="flex flex-col items-center justify-center h-64 text-black-900">
                 <p className="text-2xl mb-2 font-medium">Merhaba 👋</p>
-                <p className="text-gray-500">Sana nasıl yardımcı olabilirim?</p>
+                <p className="text-gray-900">Sana nasıl yardımcı olabilirim?</p>
               </div>
             )}
 
@@ -351,14 +351,14 @@ function App() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Mesajınızı yazın..."
-                className="w-full px-4 py-3 pr-12 border-2 border-gray-400 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 bg-white placeholder-black text-black"
+                className="w-full px-4 py-3 pr-12 border-2 border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 bg-white placeholder-black text-black"
                 disabled={loading}
                 autoFocus
               />
               <button
                 type="submit"
                 disabled={loading || !input.trim()}
-                className="absolute right-2 p-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 transition-all"
+                className="absolute right-2 p-2 bg-gray-900 text-white rounded-lg hover:bg-indigo-700 disabled:bg-red-900 transition-all"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
