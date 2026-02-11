@@ -1,5 +1,5 @@
-// 🎯 ZETA AI - FULL RESPONSIVE & OTOMATİK ANALİZ + RESİM YÜKLEME DESTEKLİ VERSİYON
-import { useState, useEffect } from 'react'
+// 🎯 ZETA AI - WIKIPEDIA RESİMLERİ DESTEKLİ VERSİYON
+import { useState, useEffect, useRef } from 'react'
 import { useChat } from './hooks/useChat'
 import { useConversations } from './hooks/useConversations'
 import { useSpeech } from './hooks/useSpeech'
@@ -10,7 +10,10 @@ function App() {
   const [input, setInput] = useState('')
   const [healthStatus, setHealthStatus] = useState(null)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const [imageUploading, setImageUploading] = useState(false) // Yeni: Resim yükleme durumu
+  const [imageUploading, setImageUploading] = useState(false)
+
+  const messagesEndRef = useRef(null)
+  const inputRef = useRef(null)
 
   const { sendMessage, loading, error } = useChat()
   const {
@@ -25,12 +28,19 @@ function App() {
   const { speak, isEnabled, toggleSpeech } = useSpeech()
 
   useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [currentConversation?.messages])
+
+  useEffect(() => {
+    inputRef.current?.focus()
+  }, [])
+
+  useEffect(() => {
     checkHealth()
       .then(data => setHealthStatus(data))
       .catch(() => setHealthStatus({ status: 'offline' }))
   }, [])
 
-  // 📄 KOD DOSYASI YÜKLEME VE ANALİZ FONKSİYONU
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -70,7 +80,6 @@ function App() {
     e.target.value = null;
   };
 
-  // 🖼️ RESİM YÜKLEME VE ANALİZ FONKSİYONU (YENİ!)
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -78,18 +87,15 @@ function App() {
     setImageUploading(true);
 
     try {
-      // Kullanıcıya göster
       addMessageToConversation({
         role: 'user',
         content: `🖼️ "${file.name}" resmini yükledim. Lütfen analiz et.`
       });
 
-      // FormData oluştur
       const formData = new FormData();
       formData.append('image', file);
       formData.append('prompt', 'Bu resimde ne var? Türkçe detaylı açıkla.');
 
-      // Backend'e gönder
       const apiUrl = window.VITE_API_URL || 'https://zeta-backend-production.up.railway.app';
       const response = await fetch(`${apiUrl}/api/upload`, {
         method: 'POST',
@@ -99,7 +105,6 @@ function App() {
       const data = await response.json();
 
       if (data.success) {
-        // AI analizi varsa göster
         const analysisText = data.analysis 
           ? data.analysis 
           : '✅ Resim başarıyla yüklendi! (Vision API yapılandırılmamış, analiz yapılamadı.)';
@@ -131,6 +136,7 @@ function App() {
   const startNewConversation = async () => {
     await createConversation('Yeni Sohbet')
     if (window.innerWidth < 768) setIsSidebarOpen(false)
+    setTimeout(() => inputRef.current?.focus(), 100)
   }
 
   const handleSend = async (e) => {
@@ -149,9 +155,15 @@ function App() {
     const result = await sendMessage(userMessage, activeConv.id, activeConv.messages || [])
 
     if (result.success) {
-      addMessageToConversation({ role: 'assistant', content: result.message })
+      addMessageToConversation({ 
+        role: 'assistant', 
+        content: result.message,
+        toolData: result.toolData || null  // ← YENİ: Tool data'yı sakla
+      })
       if (isEnabled) speak(result.message)
     }
+
+    setTimeout(() => inputRef.current?.focus(), 100)
   }
 
   const messages = currentConversation?.messages || []
@@ -160,43 +172,46 @@ function App() {
     <div className="flex h-screen w-full bg-gray-100 overflow-hidden relative">
 
       {/* SOL PANEL (Sidebar) */}
-      <aside
-        className={`fixed inset-y-0 left-0 z-50 transform ${
-          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        } transition-transform duration-300 ease-in-out md:relative md:translate-x-0 w-64 h-full border-r flex-shrink-0 shadow-2xl md:shadow-none`}
-        style={{ backgroundColor: '#FDFDFD' }}
-      >
-        <ConversationList
-          conversations={conversations}
-          currentConversationId={currentConversation?.id}
-          onSelectConversation={(id) => {
-            loadConversation(id)
-            if (window.innerWidth < 768) setIsSidebarOpen(false)
-          }}
-          onNewConversation={startNewConversation}
-          onDeleteConversation={deleteConversation}
-          onRenameConversation={renameConversation}
-        />
-      </aside>
+      {isSidebarOpen && (
+        <aside
+          className="fixed inset-y-0 left-0 z-50 w-64 h-full flex-shrink-0 shadow-2xl border-r transform transition-all duration-300 ease-in-out md:relative"
+          style={{ backgroundColor: '#FDFDFD' }}
+        >
+          <div className="w-64 h-full overflow-hidden">
+            <ConversationList
+              conversations={conversations}
+              currentConversationId={currentConversation?.id}
+              onSelectConversation={(id) => {
+                loadConversation(id)
+                if (window.innerWidth < 768) setIsSidebarOpen(false)
+              }}
+              onNewConversation={startNewConversation}
+              onDeleteConversation={deleteConversation}
+              onRenameConversation={renameConversation}
+              onClose={() => setIsSidebarOpen(false)}
+            />
+          </div>
+        </aside>
+      )}
 
-      {/* Karartma Katmanı */}
+      {/* Overlay */}
       {isSidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/40 z-40 md:hidden"
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
           onClick={() => setIsSidebarOpen(false)}
         ></div>
       )}
 
       {/* SAĞ PANEL (Chat Alanı) */}
-      <div className="flex-1 flex flex-col h-full min-w-0 bg-white">
+      <div className="flex-1 flex flex-col h-full min-w-0 bg-white transition-all duration-300 ease-in-out">
 
         {/* Header */}
         <header className="bg-gray-900 text-white px-4 md:px-6 py-2 shadow-lg flex-shrink-0 relative">
           <div className="max-w-6xl mx-auto flex justify-between items-center">
 
-            <button
-              onClick={() => setIsSidebarOpen(true)}
-              className="md:hidden p-2 -ml-2 hover:bg-indigo-500 rounded-lg"
+           <button
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="p-2 -ml-2 hover:bg-indigo-500 rounded-lg block"
             >
               <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -225,7 +240,7 @@ function App() {
             {/* HEADER KONTROLLERİ */}
             <div className="flex items-center gap-3">
               
-              {/* 🖼️ RESİM YÜKLEME BUTONU (YENİ!) */}
+              {/* 🖼️ RESİM YÜKLEME BUTONU */}
               <input
                 type="file"
                 id="image-upload"
@@ -271,7 +286,7 @@ function App() {
                 </svg>
               </button>
 
-              {/* Sağ Taraf: TTS Toggle Switch */}
+              {/* TTS Toggle */}
               <div className="flex items-center gap-3">
                 <span className="hidden sm:inline text-xs font-medium text-gray-900">Sesli Yanıt</span>
                 <button
@@ -323,7 +338,440 @@ function App() {
                 <div className={`max-w-[85%] md:max-w-[80%] p-4 rounded-xl shadow-sm ${
                   msg.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-800 border border-gray-100'
                 }`}>
-                  {msg.content}
+                  {/* Mesaj içeriği */}
+                  <div className="whitespace-pre-wrap">{msg.content}</div>
+                  
+                  {/* 🖼️ Wikipedia resimleri varsa göster */}
+                  {msg.toolData?.images && msg.toolData.images.length > 0 && !msg.toolData?.organic && (
+                    <div className="mt-4 space-y-3">
+                      {msg.toolData.images.map((img, imgIdx) => (
+                        <div key={imgIdx} className="rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+                          <img
+                            src={img.thumbnail || img.url}
+                            alt={msg.toolData.title || 'Wikipedia resmi'}
+                            className="w-full h-auto object-contain max-h-96 cursor-pointer hover:opacity-90 transition-opacity"
+                            onClick={() => window.open(img.url, '_blank')}
+                            loading="lazy"
+                          />
+                          {img.type && (
+                            <div className="px-2 py-1 bg-gray-100 text-xs text-gray-600">
+                              {img.type === 'main' ? '📸 Ana görsel' : '🖼️ Ek görsel'}
+                              {img.width && ` • ${img.width}×${img.height}`}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* 🔗 Wikipedia URL varsa göster */}
+                  {msg.toolData?.url && !msg.toolData?.organic && (
+                    <a
+                      href={msg.toolData.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 mt-3 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-sm transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                      Wikipedia'da aç
+                    </a>
+                  )}
+
+                  {/* 🌐 WEB SEARCH SONUÇLARI */}
+                  {msg.toolData?.organic && (
+                    <div className="mt-4 space-y-4">
+                      
+                      {/* Knowledge Graph */}
+                      {msg.toolData.knowledgeGraph && (
+                        <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border-2 border-blue-200">
+                          <div className="flex gap-4">
+                            {msg.toolData.knowledgeGraph.image && (
+                              <img 
+                                src={msg.toolData.knowledgeGraph.image} 
+                                alt={msg.toolData.knowledgeGraph.title}
+                                className="w-24 h-24 rounded-lg object-cover flex-shrink-0"
+                              />
+                            )}
+                            <div className="flex-1">
+                              <h3 className="text-lg font-bold text-gray-900 mb-1">
+                                {msg.toolData.knowledgeGraph.title}
+                              </h3>
+                              {msg.toolData.knowledgeGraph.type && (
+                                <p className="text-sm text-gray-600 mb-2">{msg.toolData.knowledgeGraph.type}</p>
+                              )}
+                              {msg.toolData.knowledgeGraph.description && (
+                                <p className="text-sm text-gray-700">{msg.toolData.knowledgeGraph.description}</p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Answer Box */}
+                      {msg.toolData.answerBox && (
+                        <div className="p-4 bg-green-50 rounded-lg border-l-4 border-green-500">
+                          <div className="flex items-start gap-2">
+                            <span className="text-2xl">⚡</span>
+                            <div className="flex-1">
+                              {msg.toolData.answerBox.title && (
+                                <h4 className="font-semibold text-gray-900 mb-1">
+                                  {msg.toolData.answerBox.title}
+                                </h4>
+                              )}
+                              <p className="text-gray-800">{msg.toolData.answerBox.answer}</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Images */}
+                      {msg.toolData.images && msg.toolData.images.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                            🖼️ Resimler
+                          </h4>
+                          <div className="grid grid-cols-3 gap-2">
+                            {msg.toolData.images.slice(0, 6).map((img, imgIdx) => (
+                              <img
+                                key={imgIdx}
+                                src={img.thumbnail}
+                                alt={img.title}
+                                className="w-full h-24 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                                onClick={() => window.open(img.original || img.link, '_blank')}
+                                loading="lazy"
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* News */}
+                      {msg.toolData.news && msg.toolData.news.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                            📰 Haberler
+                          </h4>
+                          <div className="space-y-2">
+                            {msg.toolData.news.slice(0, 3).map((article, newsIdx) => (
+                              <a
+                                key={newsIdx}
+                                href={article.link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
+                              >
+                                <div className="flex gap-3">
+                                  {article.thumbnail && (
+                                    <img 
+                                      src={article.thumbnail} 
+                                      alt={article.title}
+                                      className="w-16 h-16 rounded object-cover flex-shrink-0"
+                                    />
+                                  )}
+                                  <div className="flex-1 min-w-0">
+                                    <h5 className="font-medium text-gray-900 text-sm line-clamp-2 mb-1">
+                                      {article.title}
+                                    </h5>
+                                    <p className="text-xs text-gray-600">
+                                      {article.source} • {article.date}
+                                    </p>
+                                  </div>
+                                </div>
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Videos */}
+                      {msg.toolData.videos && msg.toolData.videos.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                            🎥 Videolar
+                          </h4>
+                          <div className="grid grid-cols-2 gap-2">
+                            {msg.toolData.videos.slice(0, 4).map((video, vidIdx) => (
+                              <a
+                                key={vidIdx}
+                                href={video.link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block bg-gray-50 hover:bg-gray-100 rounded-lg overflow-hidden transition-colors"
+                              >
+                                {video.thumbnail && (
+                                  <img 
+                                    src={video.thumbnail} 
+                                    alt={video.title}
+                                    className="w-full h-24 object-cover"
+                                  />
+                                )}
+                                <div className="p-2">
+                                  <h5 className="text-xs font-medium text-gray-900 line-clamp-2">
+                                    {video.title}
+                                  </h5>
+                                  <p className="text-xs text-gray-600 mt-1">
+                                    {video.channel}
+                                  </p>
+                                </div>
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Web Results */}
+                      {msg.toolData.organic && msg.toolData.organic.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                            🔍 Arama Sonuçları
+                          </h4>
+                          <div className="space-y-3">
+                            {msg.toolData.organic.slice(0, 5).map((result, resultIdx) => (
+                              <a
+                                key={resultIdx}
+                                href={result.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block p-3 bg-white hover:bg-gray-50 rounded-lg border border-gray-200 transition-colors"
+                              >
+                                <h5 className="text-sm font-semibold text-blue-600 hover:text-blue-800 mb-1">
+                                  {result.title}
+                                </h5>
+                                <p className="text-xs text-green-700 mb-1">{result.displayLink}</p>
+                                {result.snippet && (
+                                  <p className="text-xs text-gray-700 line-clamp-2">{result.snippet}</p>
+                                )}
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Related Searches */}
+                      {msg.toolData.relatedSearches && msg.toolData.relatedSearches.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-semibold text-gray-700 mb-2">İlgili Aramalar</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {msg.toolData.relatedSearches.map((related, relIdx) => (
+                              <a
+                                key={relIdx}
+                                href={related.link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-full text-xs transition-colors"
+                              >
+                                {related.query}
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* ⚽ FOOTBALL SONUÇLARI */}
+                  {msg.toolData?.type && (msg.toolData.type === 'standings' || msg.toolData.type === 'topscorers' || msg.toolData.type === 'team' || msg.toolData.type === 'live') && (
+                    <div className="mt-4 space-y-4">
+                      
+                      {/* PUAN DURUMU */}
+                      {msg.toolData.type === 'standings' && msg.toolData.standings && (
+                        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                          <div className="bg-gradient-to-r from-green-600 to-green-700 px-4 py-3 flex items-center justify-between">
+                            <h3 className="text-white font-bold flex items-center gap-2">
+                              <span className="text-2xl">⚽</span>
+                              {msg.toolData.league} Puan Durumu
+                            </h3>
+                            <span className="text-xs text-green-100">{msg.toolData.source}</span>
+                          </div>
+                          
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                              <thead className="bg-gray-50 border-b border-gray-200">
+                                <tr>
+                                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">#</th>
+                                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Takım</th>
+                                  <th className="px-2 py-2 text-center text-xs font-semibold text-gray-600">O</th>
+                                  <th className="px-2 py-2 text-center text-xs font-semibold text-gray-600">G</th>
+                                  <th className="px-2 py-2 text-center text-xs font-semibold text-gray-600">B</th>
+                                  <th className="px-2 py-2 text-center text-xs font-semibold text-gray-600">M</th>
+                                  <th className="px-2 py-2 text-center text-xs font-semibold text-gray-600">A</th>
+                                  <th className="px-2 py-2 text-center text-xs font-semibold text-gray-600">Y</th>
+                                  <th className="px-2 py-2 text-center text-xs font-semibold text-gray-600">AV</th>
+                                  <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600">P</th>
+                                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Form</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {msg.toolData.standings.slice(0, 10).map((team, idx) => (
+                                  <tr key={idx} className={`border-b border-gray-100 hover:bg-gray-50 ${idx < 3 ? 'bg-blue-50/30' : ''}`}>
+                                    <td className="px-4 py-3 font-semibold text-gray-700">{team.rank}</td>
+                                    <td className="px-4 py-3">
+                                      <div className="flex items-center gap-2">
+                                        {team.logo && (
+                                          <img src={team.logo} alt={team.team} className="w-6 h-6 object-contain" />
+                                        )}
+                                        <span className="font-medium text-gray-900">{team.team}</span>
+                                      </div>
+                                    </td>
+                                    <td className="px-2 py-3 text-center text-gray-600">{team.played}</td>
+                                    <td className="px-2 py-3 text-center text-green-600 font-semibold">{team.win}</td>
+                                    <td className="px-2 py-3 text-center text-gray-600">{team.draw}</td>
+                                    <td className="px-2 py-3 text-center text-red-600">{team.lose}</td>
+                                    <td className="px-2 py-3 text-center text-gray-700">{team.goalsFor}</td>
+                                    <td className="px-2 py-3 text-center text-gray-700">{team.goalsAgainst}</td>
+                                    <td className={`px-2 py-3 text-center font-semibold ${team.goalDiff > 0 ? 'text-green-600' : team.goalDiff < 0 ? 'text-red-600' : 'text-gray-600'}`}>
+                                      {team.goalDiff > 0 ? '+' : ''}{team.goalDiff}
+                                    </td>
+                                    <td className="px-3 py-3 text-center font-bold text-lg text-blue-600">{team.points}</td>
+                                    <td className="px-3 py-3">
+                                      <div className="flex gap-0.5">
+                                        {team.form && team.form.split('').map((result, formIdx) => (
+                                          <span
+                                            key={formIdx}
+                                            className={`w-5 h-5 rounded-sm flex items-center justify-center text-xs font-bold text-white ${
+                                              result === 'W' ? 'bg-green-500' :
+                                              result === 'D' ? 'bg-gray-400' :
+                                              result === 'L' ? 'bg-red-500' : 'bg-gray-300'
+                                            }`}
+                                          >
+                                            {result}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* EN İYİ GOLCÜLER */}
+                      {msg.toolData.type === 'topscorers' && msg.toolData.scorers && (
+                        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                          <div className="bg-gradient-to-r from-orange-600 to-red-600 px-4 py-3 flex items-center justify-between">
+                            <h3 className="text-white font-bold flex items-center gap-2">
+                              <span className="text-2xl">👟</span>
+                              En İyi Golcüler
+                            </h3>
+                            <span className="text-xs text-orange-100">{msg.toolData.source}</span>
+                          </div>
+                          
+                          <div className="divide-y divide-gray-100">
+                            {msg.toolData.scorers.slice(0, 10).map((player, idx) => (
+                              <div key={idx} className="p-4 hover:bg-gray-50 transition-colors">
+                                <div className="flex items-center gap-4">
+                                  <div className="flex-shrink-0 w-10 text-center">
+                                    <span className="text-2xl font-bold text-gray-400">#{idx + 1}</span>
+                                  </div>
+                                  
+                                  {player.photo && (
+                                    <img 
+                                      src={player.photo} 
+                                      alt={player.name}
+                                      className="w-14 h-14 rounded-full object-cover border-2 border-gray-200"
+                                    />
+                                  )}
+                                  
+                                  <div className="flex-1">
+                                    <h4 className="font-bold text-gray-900">{player.name}</h4>
+                                    <p className="text-sm text-gray-600">{player.team}</p>
+                                  </div>
+                                  
+                                  <div className="flex gap-4 text-right">
+                                    <div>
+                                      <div className="text-2xl font-bold text-green-600">{player.goals}</div>
+                                      <div className="text-xs text-gray-500">Gol</div>
+                                    </div>
+                                    <div>
+                                      <div className="text-xl font-semibold text-blue-600">{player.assists}</div>
+                                      <div className="text-xs text-gray-500">Asist</div>
+                                    </div>
+                                    <div>
+                                      <div className="text-lg text-gray-700">{player.matches}</div>
+                                      <div className="text-xs text-gray-500">Maç</div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* TAKIM MAÇLARI */}
+                      {msg.toolData.type === 'team' && msg.toolData.matches && msg.toolData.matches.length > 0 && (
+                        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3">
+                            <h3 className="text-white font-bold">
+                              {msg.toolData.team} - {msg.toolData.matchType === 'next' ? 'Gelecek Maçlar' : 'Son Maçlar'}
+                            </h3>
+                          </div>
+                          
+                          <div className="divide-y divide-gray-100">
+                            {msg.toolData.matches.map((match, idx) => (
+                              <div key={idx} className="p-4 hover:bg-gray-50">
+                                <div className="flex items-center justify-between gap-4">
+                                  <div className="flex-1 text-right">
+                                    <div className="flex items-center justify-end gap-2">
+                                      {match.homeLogo && (
+                                        <img src={match.homeLogo} alt={match.home} className="w-8 h-8" />
+                                      )}
+                                      <span className="font-semibold text-gray-900">{match.home}</span>
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="text-center px-4">
+                                    <div className="text-xl font-bold text-gray-900">{match.score}</div>
+                                    <div className="text-xs text-gray-500 mt-1">{match.date}</div>
+                                  </div>
+                                  
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-semibold text-gray-900">{match.away}</span>
+                                      {match.awayLogo && (
+                                        <img src={match.awayLogo} alt={match.away} className="w-8 h-8" />
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* CANLI MAÇLAR */}
+                      {msg.toolData.type === 'live' && msg.toolData.matches && (
+                        <div className="bg-white rounded-lg border-2 border-red-500 overflow-hidden">
+                          <div className="bg-gradient-to-r from-red-600 to-red-700 px-4 py-3">
+                            <h3 className="text-white font-bold flex items-center gap-2">
+                              <span className="animate-pulse">🔴</span>
+                              Canlı Maçlar
+                            </h3>
+                          </div>
+                          
+                          <div className="divide-y divide-gray-100">
+                            {msg.toolData.matches.map((match, idx) => (
+                              <div key={idx} className="p-4 bg-red-50">
+                                <div className="flex items-center justify-between">
+                                  <span className="font-semibold">{match.home}</span>
+                                  <div className="text-center">
+                                    <div className="text-2xl font-bold text-red-600">{match.score}</div>
+                                    <div className="text-xs text-red-600 font-semibold">{match.status}</div>
+                                  </div>
+                                  <span className="font-semibold">{match.away}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -339,21 +787,23 @@ function App() {
                 </div>
               </div>
             )}
+
+            <div ref={messagesEndRef} />
           </div>
         </main>
 
-        {/* Input Only Footer */}
+        {/* Input Footer */}
         <footer className="bg-white border-t p-4 flex-shrink-0">
           <form onSubmit={handleSend} className="max-w-4xl mx-auto">
             <div className="relative flex items-center">
               <input
+                ref={inputRef}
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Mesajınızı yazın..."
                 className="w-full px-4 py-3 pr-12 border-2 border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 bg-white placeholder-black text-black"
                 disabled={loading}
-                autoFocus
               />
               <button
                 type="submit"

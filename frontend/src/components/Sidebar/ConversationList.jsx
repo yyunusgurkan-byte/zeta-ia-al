@@ -7,9 +7,9 @@ const ConversationList = ({
   onSelectConversation,
   onNewConversation,
   onDeleteConversation,
-  onRenameConversation
+  onRenameConversation,
+  onClose // ← YENİ: Sidebar'ı tamamen kapatmak için
 }) => {
-  const [isCollapsed, setIsCollapsed] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [editTitle, setEditTitle] = useState('')
   const [menuOpenId, setMenuOpenId] = useState(null)
@@ -49,30 +49,14 @@ const ConversationList = ({
     setMenuOpenId(null)
   }
 
-  // Kapalı hali (Collapsed)
-  if (isCollapsed) {
-    return (
-      <div className="w-12 h-full flex flex-col items-center py-4 bg-transparent border-r">
-        <button
-          onClick={() => setIsCollapsed(false)}
-          className="p-2 hover:bg-gray-200 rounded-lg text-gray-600"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
-      </div>
-    )
-  }
-
   return (
-    // bg-transparent yaptık ki App.jsx'teki görsel rengi (krem) görünsün
     <div className="w-64 flex flex-col h-full bg-transparent text-gray-800">
       {/* Header */}
       <div className="p-4 border-b border-gray-200 flex justify-between items-center">
         <h2 className="font-semibold text-gray-700">Sohbetler</h2>
+        {/* ✅ X butonu - Sidebar'ı tamamen kapatır */}
         <button
-          onClick={() => setIsCollapsed(true)}
+          onClick={onClose}
           className="p-1 hover:bg-gray-200 rounded text-gray-500"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -145,19 +129,18 @@ const ConversationList = ({
 
                 {/* Menu Button */}
                 <button
-  onClick={(e) => {
-    e.stopPropagation()
-    setMenuOpenId(menuOpenId === conv.id ? null : conv.id)
-  }}
-  // text-black ekledik ve opacity'yi artırdık
-  className="opacity-60 group-hover:opacity-100 p-1 hover:bg-gray-200 rounded transition-opacity text-black"
->
-  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 16 16">
-    <circle cx="8" cy="3" r="1.5"/>
-    <circle cx="8" cy="8" r="1.5"/>
-    <circle cx="8" cy="13" r="1.5"/>
-  </svg>
-</button>
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setMenuOpenId(menuOpenId === conv.id ? null : conv.id)
+                  }}
+                  className="opacity-60 group-hover:opacity-100 p-1 hover:bg-gray-200 rounded transition-opacity text-black"
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 16 16">
+                    <circle cx="8" cy="3" r="1.5"/>
+                    <circle cx="8" cy="8" r="1.5"/>
+                    <circle cx="8" cy="13" r="1.5"/>
+                  </svg>
+                </button>
 
                 {/* Dropdown Menu */}
                 {menuOpenId === conv.id && (

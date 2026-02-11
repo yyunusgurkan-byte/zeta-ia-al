@@ -28,6 +28,7 @@ export const useChat = () => {
         message: response.response,
         conversationId: response.conversationId,
         toolUsed: response.toolUsed,
+        toolData: response.metadata?.toolData || null, // ← YENİ: toolData'yı aktar
         metadata: response.metadata
       };
 
