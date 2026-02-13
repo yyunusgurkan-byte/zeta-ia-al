@@ -96,7 +96,7 @@ function App() {
       formData.append('image', file);
       formData.append('prompt', 'Bu resimde ne var? Türkçe detaylı açıkla.');
 
-      const apiUrl = window.VITE_API_URL || 'https://zeta-backend-production.up.railway.app';
+      const apiUrl = 'https://zeta-ai-backend-production.up.railway.app';
       const response = await fetch(`${apiUrl}/api/upload`, {
         method: 'POST',
         body: formData
