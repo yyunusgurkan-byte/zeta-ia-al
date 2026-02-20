@@ -119,13 +119,37 @@ function MusicPlayer({ playlist, currentIndex, onNext, onPrev, onSelectSong, onC
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Şarkı değiştiğinde videoyu yükle
+ // Şarkı değiştiğinde videoyu yükle
   useEffect(() => {
     if (!currentSong) return;
     if (!playerInstanceRef.current) return;
     loadVideo(currentSong.id);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSong?.id]);
+
+  // Media Session API - kilit ekranı kontrolü
+  useEffect(() => {
+    if (!currentSong) return;
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: currentSong.title,
+        artist: currentSong.artist,
+        artwork: [{ src: currentSong.thumbnail, sizes: '96x96', type: 'image/jpeg' }]
+      });
+      navigator.mediaSession.setActionHandler('play', () => {
+        playerInstanceRef.current?.playVideo();
+      });
+      navigator.mediaSession.setActionHandler('pause', () => {
+        playerInstanceRef.current?.pauseVideo();
+      });
+      navigator.mediaSession.setActionHandler('nexttrack', () => {
+        onNextRef.current();
+      });
+      navigator.mediaSession.setActionHandler('previoustrack', () => {
+        onPrev();
+      });
+    }
+  }, [currentSong, onPrev]);
 
   const togglePlay = () => {
     if (!playerInstanceRef.current) return;
