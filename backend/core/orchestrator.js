@@ -166,8 +166,8 @@ class ZetaOrchestrator {
     if (hasWeatherIntent) {
       let city = 'Istanbul';
       const cityPatterns = [
-        /([a-zçğışöü]+)\s+(?:hava durumu|weather)/i,
-        /(?:hava durumu|weather)\s+([a-zçğışöü]+)/i,
+       /([a-zçğışöüİı]+)\s+(?:hava durumu|weather)/i,
+/(?:hava durumu|weather)\s+([a-zçğışöüİı]+)/i,
       ];
       for (const pattern of cityPatterns) {
         const match = userMessage.match(pattern);
