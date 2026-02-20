@@ -35,7 +35,7 @@ this.baseURL = 'https://api.groq.com/openai/v1/chat/completions';
         model: model,
         messages: messages,
         temperature: 0.2,
-        max_tokens: 1000,
+        max_tokens: 3000,
         top_p: 1,
         stream: false
       }, {
@@ -108,6 +108,7 @@ KURALLAR:
 KOD YAZARKEN ZORUNLU KURALLAR:
 - Kod bloklarını MUTLAKA doğru dil etiketiyle yaz
 - package.json analiz ederken SADECE hatalı satırları listele, uzun açıklama yapma
+- Hatalı kodlarda hatanın NEDENİNİ açıkla, sadece düzeltme yapma dene de 
 - yeni kodu hatasız oluştur ver yine hata olursa analiz et hataları ayıkla düzelt ver
 - HTML kodu için: \`\`\`html
 - JavaScript kodu için: \`\`\`javascript
