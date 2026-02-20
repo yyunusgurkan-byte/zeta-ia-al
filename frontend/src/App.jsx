@@ -1,16 +1,34 @@
-// 🎯 ZETA AI - WIKIPEDIA RESİMLERİ DESTEKLİ VERSİYON
+// 🎯 ZETA AI - WIKIPEDIA RESİMLERİ + YOUTUBE MÜZİK ÇALAR + CANLI MAÇ
 import { useState, useEffect, useRef } from 'react'
 import { useChat } from './hooks/useChat'
 import { useConversations } from './hooks/useConversations'
 import { useSpeech } from './hooks/useSpeech'
 import { checkHealth } from './services/api'
+import { searchYouTube } from './services/youtube'
+import { getLiveMatches, getTeamLiveMatch, getMatchStatistics, getMatchEvents } from './services/football'
 import ConversationList from './components/Sidebar/ConversationList'
+import MusicPlayer from './components/MusicPlayer/MusicPlayer'
+import LiveMatch from './components/LiveMatch/LiveMatch'
+import { parseCodeBlocks } from './components/Chat/MessageBubble'
+import CodePanel from './components/Chat/CodePanel'
 
 function App() {
   const [input, setInput] = useState('')
   const [healthStatus, setHealthStatus] = useState(null)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [imageUploading, setImageUploading] = useState(false)
+  
+  // 🎵 Müzik Player State'leri
+  const [showMusicPlayer, setShowMusicPlayer] = useState(false)
+  const [musicPlaylist, setMusicPlaylist] = useState([])
+  const [currentSongIndex, setCurrentSongIndex] = useState(0)
+  const [musicLoading, setMusicLoading] = useState(false)
+
+  // 🏟️ Canlı Maç State'leri
+  const [liveMatchData, setLiveMatchData] = useState(null)
+  const [matchStatistics, setMatchStatistics] = useState(null)
+  const [matchEvents, setMatchEvents] = useState(null)
+  const [showLiveMatch, setShowLiveMatch] = useState(false)
 
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
@@ -139,12 +157,242 @@ function App() {
     setTimeout(() => inputRef.current?.focus(), 100)
   }
 
+  // 🏟️ Canlı maç verilerini getir
+  const handleGetLiveMatch = async (teamName = null) => {
+    try {
+      let match;
+      
+      if (teamName) {
+        // Belirli bir takımın maçını getir
+        match = await getTeamLiveMatch(teamName);
+        
+        if (!match) {
+          addMessageToConversation({
+            role: 'assistant',
+            content: `❌ ${teamName} için canlı maç bulunamadı.`
+          });
+          return;
+        }
+      } else {
+        // Tüm canlı maçları getir (ilkini göster)
+        const matches = await getLiveMatches();
+        
+        if (matches.length === 0) {
+          addMessageToConversation({
+            role: 'assistant',
+            content: `❌ Şu an canlı maç bulunmamaktadır.`
+          });
+          return;
+        }
+        
+        match = matches[0]; // İlk canlı maçı göster
+      }
+      
+      // Maç istatistiklerini ve olaylarını getir
+      const [stats, events] = await Promise.all([
+        getMatchStatistics(match.fixture.id),
+        getMatchEvents(match.fixture.id)
+      ]);
+      
+      setLiveMatchData(match);
+      setMatchStatistics(stats);
+      setMatchEvents(events);
+      setShowLiveMatch(true);
+      
+      const teamInfo = teamName 
+        ? `${teamName} maçı` 
+        : `${match.teams.home.name} - ${match.teams.away.name}`;
+      
+      addMessageToConversation({
+        role: 'assistant',
+        content: `🏟️ ${teamInfo} için canlı maç bilgileri yüklendi!`
+      });
+      
+    } catch (error) {
+      console.error('Canlı maç getirme hatası:', error);
+      addMessageToConversation({
+        role: 'assistant',
+        content: `❌ Canlı maç bilgileri alınamadı: ${error.message}`
+      });
+    }
+  };
+
+  // 🎵 Müzik Fonksiyonları
+  const handlePlayMusic = async (query) => {
+    setMusicLoading(true)
+    try {
+      const results = await searchYouTube(query, 1)
+      if (results.length > 0) {
+        setMusicPlaylist(results) // Yeni liste oluştur
+        setCurrentSongIndex(0)
+        setShowMusicPlayer(true)
+        
+        addMessageToConversation({
+          role: 'assistant',
+          content: `🎵 "${query}" için ${results.length} şarkı bulundu. Müzik çalar açıldı!`
+        })
+      } else {
+        addMessageToConversation({
+          role: 'assistant',
+          content: `❌ "${query}" için müzik bulunamadı.`
+        })
+      }
+    } catch (error) {
+      console.error('Müzik arama hatası:', error)
+      addMessageToConversation({
+        role: 'assistant',
+        content: `❌ Müzik ararken hata oluştu: ${error.message}`
+      })
+    } finally {
+      setMusicLoading(false)
+    }
+  }
+
+  // 🎵 Playlist'e ekleme fonksiyonu
+ const handleAddToPlaylist = async (query) => {
+  setMusicLoading(true)
+  try {
+    const results = await searchYouTube(query, 1)
+    if (results.length > 0) {
+      const newSong = results[0]
+      
+      const exists = musicPlaylist.some(song => song.id === newSong.id)
+      if (exists) {
+        addMessageToConversation({
+          role: 'assistant',
+          content: `ℹ️ "${newSong.title}" zaten listede mevcut.`
+        })
+      } else {
+        setMusicPlaylist(prev => [...prev, newSong])
+        setShowMusicPlayer(true)
+        addMessageToConversation({
+          role: 'assistant',
+          content: `✅ "${newSong.title}" sıraya eklendi! (Toplam: ${musicPlaylist.length + 1} şarkı)`
+        })
+      }
+    } else {
+      addMessageToConversation({
+        role: 'assistant',
+        content: `❌ "${query}" için şarkı bulunamadı.`
+      })
+    }
+  } catch (error) {
+    addMessageToConversation({
+      role: 'assistant',
+      content: `❌ Şarkı eklenirken hata: ${error.message}`
+    })
+  } finally {
+    setMusicLoading(false)
+  }
+}
+
+  const handleNextSong = () => {
+    if (currentSongIndex < musicPlaylist.length - 1) {
+      setCurrentSongIndex(prev => prev + 1)
+    }
+  }
+
+  const handlePrevSong = () => {
+    if (currentSongIndex > 0) {
+      setCurrentSongIndex(prev => prev - 1)
+    }
+  }
+
+  const handleSelectSong = (index) => {
+    setCurrentSongIndex(index)
+  }
+
+  const handleCloseMusicPlayer = () => {
+    setShowMusicPlayer(false)
+  }
+
   const handleSend = async (e) => {
     if (e) e.preventDefault()
     if (!input.trim() || loading) return
 
     const userMessage = input.trim()
     setInput('')
+const lowerMessage = userMessage.toLowerCase()
+
+    // 🎵 Sadece "çal/cal/oynat/play/aç/ac" yazıldıysa - boş player aç
+   
+    if (['çal', 'cal', 'oynat', 'play', 'aç', 'ac'].includes(lowerMessage)) {
+      addMessageToConversation({ role: 'user', content: userMessage })
+      setMusicPlaylist([])
+      setCurrentSongIndex(0)
+      setShowMusicPlayer(true)
+      addMessageToConversation({
+        role: 'assistant',
+        content: `🎵 Müzik çalar açıldı! Şarkı aramak için "çal şarkı adı" yazabilirsiniz.`
+      })
+      setTimeout(() => inputRef.current?.focus(), 100)
+      return
+    }
+
+    // 🎵 "X ekle" komutu - SADECE player açıksa çalışır
+    if (showMusicPlayer) {
+      const addMatch = userMessage.match(/^(.+)[\s]+(ekle|add)$/i)
+      if (addMatch) {
+        const query = addMatch[1].trim()
+        if (query.split(/\s+/).length >= 2) { // En az 2 kelime
+          addMessageToConversation({ role: 'user', content: userMessage })
+          await handleAddToPlaylist(query)
+          setTimeout(() => inputRef.current?.focus(), 100)
+          return
+        }
+      }
+    }
+
+    // 🎵 "çal X" veya "X çal" komutu - Yeni müzik çal
+    let query = null
+    let isMusic = false
+    
+    // Başta "çal X" formatı (aç/ac eklendi)
+    const startMatch = userMessage.match(/^(çal|cal|oynat|play|aç|ac)[\s]+(.+)$/i)
+    if (startMatch) {
+      const searchQuery = startMatch[2].trim()
+      if (searchQuery.split(/\s+/).length >= 2) {
+        query = searchQuery
+        isMusic = true
+      }
+    }
+    
+    // Sonda "X çal" formatı (aç/ac eklendi)
+    if (!isMusic) {
+      const endMatch = userMessage.match(/^(.+)[\s]+(çal|cal|oynat|play|aç|ac)$/i)
+      if (endMatch) {
+        const searchQuery = endMatch[1].trim()
+        if (searchQuery.split(/\s+/).length >= 2) {
+          query = searchQuery
+          isMusic = true
+        }
+      }
+    }
+    
+    if (isMusic && query) {
+      addMessageToConversation({ role: 'user', content: userMessage })
+      await handlePlayMusic(query.trim())
+      setTimeout(() => inputRef.current?.focus(), 100)
+      return
+    }
+
+    // 🏟️ Canlı maç komutları
+    if (lowerMessage.includes('canlı maç') || 
+        lowerMessage.includes('maç skoru') || 
+        lowerMessage.includes('live match') ||
+        lowerMessage.includes('maç sonucu') ||
+        lowerMessage.includes('canli mac')) {
+      
+      addMessageToConversation({ role: 'user', content: userMessage });
+      
+      // Takım adı var mı kontrol et
+      const teamMatch = userMessage.match(/(?:konyaspor|galatasaray|fenerbahçe|fenerbahce|beşiktaş|besiktas|trabzonspor|başakşehir|basaksehir|ankaragücü|ankaragucu|antalyaspor|alanyaspor|sivasspor|kayserispor|kasımpaşa|kasimpasa|gaziantep|göztepe|goztepe|hatayspor|adana demirspor|fatih karagümrük|fatih karagumruk|giresunspor|İstanbulspor|istanbulspor|pendikspor|rizespor|samsunspor|ümraniye|umraniye)/gi);
+      const teamName = teamMatch ? teamMatch[0] : null;
+      
+      await handleGetLiveMatch(teamName);
+      setTimeout(() => inputRef.current?.focus(), 100);
+      return;
+    }
 
     let activeConv = currentConversation
     if (!activeConv) {
@@ -158,13 +406,59 @@ function App() {
       addMessageToConversation({ 
         role: 'assistant', 
         content: result.message,
-        toolData: result.toolData || null  // ← YENİ: Tool data'yı sakla
+        toolData: result.toolData || null
       })
       if (isEnabled) speak(result.message)
     }
 
     setTimeout(() => inputRef.current?.focus(), 100)
   }
+
+const [codeBlocks, setCodeBlocks] = useState([])
+const [showCodePanel, setShowCodePanel] = useState(false)
+
+const renderMessageContent = (content) => {
+  if (!content) return null
+  const parts = []
+  const regex = /```(\w+)?\n?([\s\S]*?)```/g
+  let lastIndex = 0
+  let match
+  let i = 0
+
+  while ((match = regex.exec(content)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(<span key={`t${i++}`} style={{whiteSpace:'pre-wrap'}}>{content.slice(lastIndex, match.index)}</span>)
+    }
+    const lang = match[1] || 'code'
+    const code = match[2].trim()
+    parts.push(
+      <div key={`c${i++}`} style={{margin:'8px 0', borderRadius:8, overflow:'hidden', border:'1px solid #313244', background:'#1e1e2e'}}>
+        <div style={{display:'flex', alignItems:'center', gap:8, padding:'6px 12px', background:'#11111b', borderBottom:'1px solid #313244'}}>
+          <span style={{background:'#313244', color:'#89b4fa', fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:4, textTransform:'uppercase'}}>{lang}</span>
+          <span style={{color:'#6c7086', fontSize:12}}>{code.split('\n').length} satır</span>
+          <button
+            style={{marginLeft:'auto', background:'#313244', border:'none', color:'#cdd6f4', fontSize:12, padding:'3px 10px', borderRadius:6, cursor:'pointer'}}
+            onClick={() => { setCodeBlocks(parseCodeBlocks(content)); setShowCodePanel(true) }}
+          >⬡ Panelde Aç</button>
+          <button
+            style={{background:'#313244', border:'none', color:'#cdd6f4', fontSize:12, padding:'3px 8px', borderRadius:6, cursor:'pointer'}}
+            onClick={() => navigator.clipboard.writeText(code)}
+          >📋</button>
+        </div>
+        <pre style={{margin:0, padding:'12px 16px', fontFamily:'Fira Code, Courier New, monospace', fontSize:13, color:'#cdd6f4', overflowX:'auto', maxHeight:150}}>
+          <code>{code.split('\n').slice(0,6).join('\n')}{code.split('\n').length > 6 ? `\n... +${code.split('\n').length - 6} satır` : ''}</code>
+        </pre>
+      </div>
+    )
+    lastIndex = match.index + match[0].length
+    i++
+  }
+  if (lastIndex < content.length) {
+    parts.push(<span key={`t${i++}`} style={{whiteSpace:'pre-wrap'}}>{content.slice(lastIndex)}</span>)
+  }
+  return parts.length > 0 ? parts : <span style={{whiteSpace:'pre-wrap'}}>{content}</span>
+}
+
 
   const messages = currentConversation?.messages || []
 
@@ -206,88 +500,75 @@ function App() {
       <div className="flex-1 flex flex-col h-full min-w-0 bg-white transition-all duration-300 ease-in-out">
 
         {/* Header */}
-        <header className="bg-gray-900 text-white px-4 md:px-6 py-2 shadow-lg flex-shrink-0 relative">
+       <header className="bg-orange-100 text-white px-4 md:px-6 py-2 shadow-lg flex-shrink-0 relative">
           <div className="max-w-6xl mx-auto flex justify-between items-center">
 
            <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="p-2 -ml-2 hover:bg-indigo-500 rounded-lg block"
+              className="p-2 -ml-2 hover:bg-green-600 rounded-lg block"
             >
-              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-8 h-8 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
 
             <div className="flex items-center gap-4 flex-1 md:flex-initial justify-center md:justify-start">
-              <div className="h-20 md:h-28 w-40 md:w-48 flex items-center justify-center overflow-hidden">
-                <img
-                  src="https://r.resimlink.com/hvdiOrR3Jub.png"
-                  alt="Zeta Logo"
-                  className="h-full w-full object-contain transform scale-[2.2] md:scale-[2.5]"
-                />
-              </div>
-
-              <div className="hidden sm:flex flex-col -ml-6">
-                <div className="flex items-center gap-1.5 bg-gray-900/80 px-3 py-1 rounded-full border border-white-900/20">
-                  <span className={`w-2 h-2 rounded-full animate-pulse ${healthStatus?.status === 'healthy' ? 'bg-green-400' : 'bg-red-500'}`}></span>
-                  <span className="text-[10px] text-black-900 font-bold uppercase tracking-tighter">
-                    {healthStatus?.status === 'healthy' ? 'ONLINE' : 'OFFLINE'}
-                  </span>
-                </div>
-              </div>
+             <div className="h-20 md:h-24 w-48 md:w-56 flex items-center justify-center overflow-hidden ml-4 md:ml-0">
+  <img
+    src="https://r.resimlink.com/hvdiOrR3Jub.png"
+    alt="Zeta Logo"
+    className="h-full w-full object-contain"
+    style={{ transform: 'scale(2.5)' }}
+  />
+</div>
             </div>
 
             {/* HEADER KONTROLLERİ */}
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col items-end gap-2">
               
-              {/* 🖼️ RESİM YÜKLEME BUTONU */}
-              <input
-                type="file"
-                id="image-upload"
-                className="hidden"
-                onChange={handleImageUpload}
-                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-              />
-              <button
-                type="button"
-                onClick={() => document.getElementById('image-upload').click()}
-                disabled={imageUploading}
-                className="p-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-all shadow-md active:scale-95 disabled:opacity-50"
-                title="Resim Yükle"
-              >
-                {imageUploading ? (
-                  <svg className="w-5 h-5 md:w-6 md:h-6 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                ) : (
-                  <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                )}
-              </button>
-
-              {/* 📄 KOD DOSYASI YÜKLEME */}
-              <input
-                type="file"
-                id="header-file-upload"
-                className="hidden"
-                onChange={handleFileUpload}
-                accept=".js,.jsx,.ts,.tsx,.css,.html,.json"
-              />
-              <button
-                type="button"
-                onClick={() => document.getElementById('header-file-upload').click()}
-                className="p-2 bg-black hover:bg-gray-700 text-white rounded-lg transition-all border border-gray-600 shadow-md active:scale-95"
-                title="Dosya Yükle"
-              >
-                <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-              </button>
-
-              {/* TTS Toggle */}
+              {/* Üst Satır: Butonlar (Yatay) */}
               <div className="flex items-center gap-3">
+                
+                {/* 🖼️ RESİM YÜKLEME BUTONU */}
+                <input
+                  type="file"
+                  id="image-upload"
+                  className="hidden"
+                  onChange={handleImageUpload}
+                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                />
+                <button
+                  type="button"
+                  onClick={() => document.getElementById('image-upload').click()}
+                  disabled={imageUploading}
+                  className="p-2 bg-gray-900 hover:bg-green-700 text-white rounded-lg transition-all shadow-md active:scale-95 disabled:opacity-50"
+                  title="Resim Yükle"
+                >
+                  {imageUploading ? (
+                    <svg className="w-5 h-5 md:w-6 md:h-6 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  ) : (
+                    <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  )}
+                </button>
+
+                {/* 🎵 MÜZİK ÇALAR BUTONU */}
+                <button
+                  type="button"
+                  onClick={() => setShowMusicPlayer(!showMusicPlayer)}
+                  className={`p-2 ${showMusicPlayer ? 'bg-pink-600 hover:bg-pink-700' : 'bg-gray-900 hover:bg-green-700'} text-white rounded-lg transition-all shadow-md active:scale-95`}
+                  title="Müzik Çalar"
+                >
+                  <svg className="w-5 h-5 md:w-6 md:h-6" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                  </svg>
+                </button>
+
+                {/* TTS Toggle */}
                 <span className="hidden sm:inline text-xs font-medium text-gray-900">Sesli Yanıt</span>
                 <button
                   onClick={toggleSpeech}
@@ -319,6 +600,14 @@ function App() {
                   </span>
                 </button>
               </div>
+
+              {/* Alt Satır: Online Badge */}
+              <div className="flex items-center gap-1.5 bg-gray-900/80 px-3 py-1.5 rounded-full border border-gray-300/20">
+                <span className={`w-2 h-2 rounded-full animate-pulse ${healthStatus?.status === 'ok' ? 'bg-green-400' : 'bg-red-500'}`}></span>
+                <span className="text-[10px] text-white font-bold uppercase tracking-wider">
+                  {healthStatus?.status === 'ok' ? 'ONLINE' : 'OFFLINE'}
+                </span>
+              </div>
             </div>
           </div>
         </header>
@@ -326,6 +615,7 @@ function App() {
         {/* Messages */}
         <main className="flex-1 overflow-y-auto p-4 bg-gray-50">
           <div className="max-w-4xl mx-auto space-y-4">
+            
             {messages.length === 0 && (
               <div className="flex flex-col items-center justify-center h-64 text-black-900">
                 <p className="text-2xl mb-2 font-medium">Merhaba 👋</p>
@@ -333,13 +623,43 @@ function App() {
               </div>
             )}
 
+            {/* 🎵 MÜZİK ÇALAR - Karşılama mesajının hemen altında */}
+            {showMusicPlayer && (
+              <div className="max-w-2xl mx-auto">
+                <MusicPlayer
+                  playlist={musicPlaylist}
+                  currentIndex={currentSongIndex}
+                  onNext={handleNextSong}
+                  onPrev={handlePrevSong}
+                  onSelectSong={handleSelectSong}
+                  onClose={handleCloseMusicPlayer}
+                />
+              </div>
+            )}
+
+            {/* 🏟️ CANLI MAÇ - Müzik çalardan sonra */}
+            {showLiveMatch && liveMatchData && (
+              <div className="max-w-2xl mx-auto">
+                <LiveMatch 
+                  matchData={liveMatchData}
+                  statistics={matchStatistics}
+                  events={matchEvents}
+                />
+              </div>
+            )}
+
             {messages.map((msg, idx) => (
               <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[85%] md:max-w-[80%] p-4 rounded-xl shadow-sm ${
-                  msg.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-800 border border-gray-100'
+                  msg.role === 'user' ? 'bg-gray-900 text-white' : 'bg-white text-gray-900 border border-gray-600'
                 }`}>
                   {/* Mesaj içeriği */}
-                  <div className="whitespace-pre-wrap">{msg.content}</div>
+                  <div className="whitespace-pre-wrap">
+  {msg.role === 'user' 
+    ? msg.content 
+    : renderMessageContent(msg.content)
+  }
+</div>
                   
                   {/* 🖼️ Wikipedia resimleri varsa göster */}
                   {msg.toolData?.images && msg.toolData.images.length > 0 && !msg.toolData?.organic && (
@@ -792,6 +1112,15 @@ function App() {
           </div>
         </main>
 
+{showCodePanel && (
+  <div style={{position:'fixed', right:0, top:0, width:'45%', height:'100vh', zIndex:100}}>
+    <CodePanel
+      codeBlocks={codeBlocks}
+      onClose={() => setShowCodePanel(false)}
+    />
+  </div>
+)}
+
         {/* Input Footer */}
         <footer className="bg-white border-t p-4 flex-shrink-0">
           <form onSubmit={handleSend} className="max-w-4xl mx-auto">
@@ -802,7 +1131,7 @@ function App() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Mesajınızı yazın..."
-                className="w-full px-4 py-3 pr-12 border-2 border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 bg-white placeholder-black text-black"
+                className="w-full px-4 py-3 pr-12 border-2 border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600 bg-white placeholder-black text-black"
                 disabled={loading}
               />
               <button

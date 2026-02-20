@@ -1,0 +1,53 @@
+# 🔐 Environment Variables
+.env
+.env.local
+.env.production
+
+# 📦 Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# 🏗️ Build Output
+dist/
+build/
+.output/
+
+# 💾 Storage & Cache
+storage/conversations/*
+storage/user-uploads/*
+storage/outputs/*
+zeta/temp/*
+zeta/cache/*
+zeta/projects/*
+
+# Keep directory structure
+!storage/conversations/.gitkeep
+!storage/user-uploads/.gitkeep
+!storage/outputs/.gitkeep
+!zeta/temp/.gitkeep
+!zeta/cache/.gitkeep
+!zeta/projects/.gitkeep
+
+# 📝 Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 🧪 Testing
+coverage/
+.nyc_output/
+
+# 🔧 IDE & Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# 🚀 OS Files
+Thumbs.db
+.DS_Store

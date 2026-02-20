@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'https://zeta-ai-backend-production.up.railway.app';
+const API_URL = 'http://localhost:3001';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -38,7 +38,7 @@ export const getConversations = async () => {
 };
 
 export const getConversation = async (id) => {
-  const response = await api.get(`/api/conversations/${id}`); // ✅ Backtick düzeltildi
+  const response = await api.get(`/api/conversations/${id}`); // ✅ Düzeltildi
   return response.data;
 };
 
@@ -51,7 +51,7 @@ export const createConversation = async (title = 'Yeni Sohbet', messages = []) =
 };
 
 export const updateConversation = async (id, messages, title) => {
-  const response = await api.put(`/api/conversations/${id}`, { // ✅ Backtick düzeltildi
+  const response = await api.put(`/api/conversations/${id}`, { // ✅ Düzeltildi
     messages,
     title
   });
@@ -59,7 +59,7 @@ export const updateConversation = async (id, messages, title) => {
 };
 
 export const deleteConversation = async (id) => {
-  const response = await api.delete(`/api/conversations/${id}`); // ✅ Backtick düzeltildi
+  const response = await api.delete(`/api/conversations/${id}`); // ✅ Düzeltildi
   return response.data;
 };
 

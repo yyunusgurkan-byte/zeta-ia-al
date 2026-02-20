@@ -69,7 +69,7 @@ const ConversationList = ({
       <div className="p-3">
         <button
           onClick={onNewConversation}
-          className="w-full px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex items-center justify-center gap-2 transition-colors shadow-sm"
+          className="w-full px-4 py-2 bg-gray-900 hover:bg-green-600 text-white rounded-lg flex items-center justify-center gap-2 transition-colors shadow-sm"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -90,14 +90,14 @@ const ConversationList = ({
               key={conv.id}
               className={`group relative mb-1 rounded-lg cursor-pointer transition-colors ${
                 currentConversationId === conv.id
-                  ? 'bg-indigo-50 border border-indigo-100'
+                  ? 'bg-indigo-50 border border-gray-900'
                   : 'hover:bg-gray-200/50'
               }`}
               onClick={() => onSelectConversation(conv.id)}
             >
               <div className="p-3 flex items-start gap-2">
                 {/* Icon */}
-                <svg className="w-5 h-5 mt-0.5 flex-shrink-0 text-indigo-500" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-5 h-5 mt-0.5 flex-shrink-0 text-red-500" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd"/>
                 </svg>
 
@@ -119,7 +119,7 @@ const ConversationList = ({
                     />
                   ) : (
                     <>
-                      <h3 className={`text-sm font-medium truncate ${currentConversationId === conv.id ? 'text-indigo-700' : 'text-gray-700'}`}>
+                      <h3 className={`text-sm font-medium truncate ${currentConversationId === conv.id ? 'text-gray-900' : 'text-gray-700'}`}>
                         {conv.title}
                       </h3>
                       <p className="text-xs text-gray-400">{formatDate(conv.updatedAt)}</p>
