@@ -29,7 +29,6 @@ const T = {
   special:   '#ff6e6e',
 };
 
-// ─── SYNTAX HIGHLIGHTER ───────────────────────────────────────────────────────
 const LANG_CONFIGS = {
   python: {
     keywords: new Set(['def','class','import','from','as','return','if','elif','else','for','while',
@@ -69,15 +68,28 @@ const LANG_CONFIGS = {
     strings: ['"',"'",'`'],
     isJSX: true,
   },
-  html: {
-    isHTML: true,
-  },
-  css: {
-    isCSS: true,
-  },
+  html: { isHTML: true },
+  css:  { isCSS: true },
 };
 
-// Tokenize a single line based on language config
+// ─── CLIPBOARD HELPER ─────────────────────────────────────────────────────────
+const copyToClipboard = (text) => {
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text);
+  } else {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+  }
+};
+
+// ─── SYNTAX HIGHLIGHTER ───────────────────────────────────────────────────────
 const tokenizeLine = (line, config, langKey) => {
   const tokens = [];
   let i = 0;
@@ -87,18 +99,14 @@ const tokenizeLine = (line, config, langKey) => {
     return tokens;
   }
 
-  // HTML tokenizer
   if (config.isHTML) {
     let rest = line;
-    let offset = 0;
-    // Comments
     if (rest.includes('<!--')) {
       const start = rest.indexOf('<!--');
       if (start > 0) tokens.push({ text: rest.slice(0, start), color: T.text });
       tokens.push({ text: rest.slice(start), color: T.comment });
       return tokens;
     }
-    // Tags
     const tagRe = /(<\/?)([\w-]+)((?:\s+[\w:-]+(?:=(?:"[^"]*"|'[^']*'|[^\s>]*))?)*)\s*(\/?>)/g;
     let lastIdx = 0;
     let m;
@@ -106,11 +114,8 @@ const tokenizeLine = (line, config, langKey) => {
       if (m.index > lastIdx) tokens.push({ text: rest.slice(lastIdx, m.index), color: T.text });
       tokens.push({ text: m[1], color: T.muted2 });
       tokens.push({ text: m[2], color: T.tag });
-      // attrs
       const attrStr = m[3];
       if (attrStr) {
-        const attrRe = /([\w:-]+)(=)("([^"]*)"|'([^']*)'|[^\s>]*)/g;
-        const attrRe2 = /([\w:-]+)/g;
         const attrTokens = [];
         let aLast = 0, am;
         const fullAttr = attrStr;
@@ -137,13 +142,10 @@ const tokenizeLine = (line, config, langKey) => {
     return tokens;
   }
 
-  // CSS tokenizer
   if (config.isCSS) {
-    // Comments
     if (line.trim().startsWith('/*') || line.trim().startsWith('*')) {
       return [{ text: line, color: T.comment }];
     }
-    // Properties
     const propRe = /^(\s*)([\w-]+)(\s*:\s*)(.*?)(;?)$/;
     const m = propRe.exec(line);
     if (m) {
@@ -155,32 +157,23 @@ const tokenizeLine = (line, config, langKey) => {
         { text: m[5], color: T.muted2 },
       ];
     }
-    // Selectors / at-rules
-    if (line.trim().startsWith('@')) {
-      return [{ text: line, color: T.keyword }];
-    }
+    if (line.trim().startsWith('@')) return [{ text: line, color: T.keyword }];
     return [{ text: line, color: T.text }];
   }
 
-  // JS/JSX/Python tokenizer
-  const { keywords, builtins, booleans, commentChar, strings: strChars, isJSX, multilineStrings } = config;
+  const { keywords, builtins, booleans, commentChar, strings: strChars, isJSX } = config;
 
   while (i < line.length) {
-    // Single-line comment
     if (commentChar && line.startsWith(commentChar, i)) {
       tokens.push({ text: line.slice(i), color: T.comment });
       break;
     }
-
-    // Decorator (Python/JSX)
     if (line[i] === '@' && i === line.search(/\S/)) {
       let j = i + 1;
       while (j < line.length && /[\w.]/.test(line[j])) j++;
       tokens.push({ text: line.slice(i, j), color: T.decorator });
       i = j; continue;
     }
-
-    // Template literal / strings
     if (strChars && strChars.includes(line[i])) {
       const q = line[i];
       let j = i + 1;
@@ -189,8 +182,6 @@ const tokenizeLine = (line, config, langKey) => {
       tokens.push({ text: line.slice(i, j), color: T.string });
       i = j; continue;
     }
-
-    // JSX Tags
     if (isJSX && line[i] === '<') {
       let j = i + 1;
       const isClose = line[j] === '/';
@@ -206,16 +197,12 @@ const tokenizeLine = (line, config, langKey) => {
         i = j; continue;
       }
     }
-
-    // Numbers
     if (/\d/.test(line[i]) && (i === 0 || !/\w/.test(line[i - 1]))) {
       let j = i;
       while (j < line.length && /[\d._xXa-fA-FoObB]/.test(line[j])) j++;
       tokens.push({ text: line.slice(i, j), color: T.number });
       i = j; continue;
     }
-
-    // Identifiers / keywords
     if (/[a-zA-Z_$]/.test(line[i])) {
       let j = i;
       while (j < line.length && /[\w$]/.test(line[j])) j++;
@@ -229,13 +216,10 @@ const tokenizeLine = (line, config, langKey) => {
       tokens.push({ text: word, color });
       i = j; continue;
     }
-
-    // Operators
     if (/[+\-*/%=!<>&|^~?:,.]/.test(line[i])) {
       tokens.push({ text: line[i], color: T.operator });
       i++; continue;
     }
-
     tokens.push({ text: line[i], color: T.text });
     i++;
   }
@@ -250,7 +234,6 @@ const detectLang = (language, code) => {
   if (l === 'python' || l === 'py') return 'python';
   if (l === 'html') return 'html';
   if (l === 'css' || l === 'scss' || l === 'sass') return 'css';
-  // Auto-detect
   if (code?.includes('def ') && code?.includes(':')) return 'python';
   if (code?.includes('import React') || code?.includes('useState') || code?.includes('jsx')) return 'jsx';
   if (code?.includes('const ') || code?.includes('function ')) return 'javascript';
@@ -292,23 +275,14 @@ const buildCombinedPreview = (codeBlocks) => {
   codeBlocks.forEach(block => {
     const lang = (block.language || '').toLowerCase();
     const code = block.code || '';
-
-    // İçeriğe göre sınıflandır (etikete güvenme)
     const looksLikeCSS = (lang === 'css' || lang === 'scss') &&
       !code.includes('function') && !code.includes('var ') &&
       !code.includes('const ') && !code.includes('document.');
-
     const looksLikeHTML = lang === 'html' ||
       (code.trim().startsWith('<') && !code.includes('function'));
-
-    if (looksLikeCSS) {
-      cssParts.push(code);
-    } else if (looksLikeHTML) {
-      htmlParts.push(code);
-    } else {
-      // Her şeyi JS olarak çalıştır
-      jsParts.push(code);
-    }
+    if (looksLikeCSS) cssParts.push(code);
+    else if (looksLikeHTML) htmlParts.push(code);
+    else jsParts.push(code);
   });
 
   return `<!DOCTYPE html>
@@ -367,7 +341,6 @@ const LivePreview = ({ codeBlocks }) => {
 
   return (
     <div style={{ borderRadius: 12, overflow: 'hidden', border: `1px solid ${T.border2}`, background: T.bg1 }}>
-      {/* Preview Header */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '10px 16px', background: T.bg0, borderBottom: `1px solid ${T.border}`,
@@ -423,7 +396,7 @@ const CodeBlock = ({ code, language }) => {
   const icon = LANG_ICONS[langKey] || '📄';
 
   const copy = useCallback(() => {
-    navigator.clipboard.writeText(code);
+    copyToClipboard(code);
     setCopied(true);
     setTimeout(() => setCopied(false), 2200);
   }, [code]);
@@ -438,7 +411,6 @@ const CodeBlock = ({ code, language }) => {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      {/* Block Header */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '10px 16px', background: T.bg0, borderBottom: `1px solid ${T.border}`,
@@ -473,9 +445,7 @@ const CodeBlock = ({ code, language }) => {
         </button>
       </div>
 
-      {/* Code Body */}
       <div style={{ display: 'flex', overflowX: 'auto' }}>
-        {/* Line numbers */}
         <div style={{
           padding: '14px 10px', background: T.bg0, borderRight: `1px solid ${T.border}`,
           userSelect: 'none', flexShrink: 0, minWidth: 44,
@@ -489,8 +459,6 @@ const CodeBlock = ({ code, language }) => {
             </div>
           ))}
         </div>
-
-        {/* Highlighted code */}
         <pre style={{
           margin: 0, padding: '14px 20px',
           fontFamily: "'Fira Code', 'Cascadia Code', 'Courier New', monospace",
@@ -520,21 +488,15 @@ const CodePanel = ({ codeBlocks, onClose }) => {
       fontFamily: "'Segoe UI', system-ui, sans-serif",
     }}>
       <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.4; }
-        }
-        @keyframes shimmer {
-          0% { background-position: -200% 0; }
-          100% { background-position: 200% 0; }
-        }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #2a2a3d; border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #353550; }
       `}</style>
 
-      {/* ── Header ── */}
+      {/* Header */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '14px 18px', background: T.bg1, borderBottom: `1px solid ${T.border}`,
@@ -556,12 +518,8 @@ const CodePanel = ({ codeBlocks, onClose }) => {
             </div>
           </div>
         </div>
-
-        {/* Window controls */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{
-            display: 'flex', gap: 6, marginRight: 8,
-          }}>
+          <div style={{ display: 'flex', gap: 6, marginRight: 8 }}>
             {['#ff5f57','#febc2e','#28c840'].map((c, i) => (
               <div key={i} style={{ width: 12, height: 12, borderRadius: '50%', background: c, opacity: 0.8 }} />
             ))}
@@ -582,7 +540,7 @@ const CodePanel = ({ codeBlocks, onClose }) => {
         </div>
       </div>
 
-      {/* ── Tabs ── */}
+      {/* Tabs */}
       {codeBlocks.length > 1 && (
         <div style={{
           display: 'flex', background: T.bg1, borderBottom: `1px solid ${T.border}`,
@@ -620,7 +578,7 @@ const CodePanel = ({ codeBlocks, onClose }) => {
         </div>
       )}
 
-      {/* ── Content ── */}
+      {/* Content */}
       <div style={{
         flex: 1, overflowY: 'auto', padding: 16,
         display: 'flex', flexDirection: 'column', gap: 14,
@@ -629,7 +587,7 @@ const CodePanel = ({ codeBlocks, onClose }) => {
 
         {showPreview && <LivePreview codeBlocks={codeBlocks} />}
 
-        {/* Footer actions */}
+        {/* Footer */}
         <div style={{
           display: 'flex', gap: 8, padding: '4px 0', alignItems: 'center',
         }}>
@@ -654,7 +612,7 @@ const CodePanel = ({ codeBlocks, onClose }) => {
             ⬇ İndir
           </button>
           <button
-            onClick={() => navigator.clipboard.writeText(codeBlocks.map(b => b.code).join('\n\n'))}
+            onClick={() => copyToClipboard(codeBlocks.map(b => b.code).join('\n\n'))}
             style={{
               padding: '7px 16px', borderRadius: 8, border: `1px solid ${T.border}`,
               background: T.bg2, color: T.muted2, fontSize: 12, cursor: 'pointer',
