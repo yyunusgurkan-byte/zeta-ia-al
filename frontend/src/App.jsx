@@ -11,6 +11,7 @@ import MusicPlayer from './components/MusicPlayer/MusicPlayer'
 import LiveMatch from './components/LiveMatch/LiveMatch'
 import { parseCodeBlocks } from './components/Chat/MessageBubble'
 import CodePanel from './components/Chat/CodePanel'
+import "../css/style.css";
 
 function App() {
   const [input, setInput] = useState('')

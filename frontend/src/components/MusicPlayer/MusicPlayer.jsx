@@ -186,26 +186,26 @@ function MusicPlayer({ playlist, currentIndex, onNext, onPrev, onSelectSong, onC
 
   if (!currentSong) {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-lg border border-gray-500 overflow-hidden">
         <div className="bg-gray-50 px-4 py-2 flex items-center justify-between border-b border-gray-200">
-          <span className="text-sm font-medium text-gray-700">YouTube Music</span>
+          <span className="text-sm font-medium text-gray-900">YouTube Music</span>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-sm">✕</button>
         </div>
         <div className="p-8 text-center">
           <div className="text-4xl mb-3">🎵</div>
           <h3 className="text-gray-900 font-semibold mb-2">Playlist Boş</h3>
-          <p className="text-gray-600 text-sm mb-4">Şarkı eklemek için aşağıdaki gibi yazın:</p>
+          <p className="text-gray-900 text-sm mb-4">Şarkı eklemek için aşağıdaki gibi yazın:</p>
           <div className="bg-gray-50 rounded-lg p-3 text-left space-y-2">
             <div>
-              <p className="text-xs text-gray-500 mb-1">Örnek:</p>
-              <p className="text-xs text-gray-700">
-                <span className="font-mono bg-gray-200 px-2 py-1 rounded">Sanatçı adı şarkı adı çal</span>
+              <p className="text-xs text-gray-900 mb-1">Örnek:</p>
+              <p className="text-xs text-white -900">
+                <span className="font-mono bg-gray-900 px-2 py-1 rounded">Sanatçı adı şarkı adı yaz çal de</span>
               </p>
             </div>
             <div>
-              <p className="text-xs text-gray-500 mb-1">Örnek:</p>
-              <p className="text-xs text-gray-700">
-                <span className="font-mono bg-gray-200 px-2 py-1 rounded">Sanatçı adı şarkı adı ekle</span>
+              <p className="text-xs text-gray-900 mb-1">Örnek:</p>
+              <p className="text-xs text-white -900">
+                <span className="font-mono bg-gray-900 px-2 py-1 rounded">Sanatçı adı şarkı adı ekle de</span>
               </p>
             </div>
           </div>
@@ -219,7 +219,7 @@ function MusicPlayer({ playlist, currentIndex, onNext, onPrev, onSelectSong, onC
       {/* Header */}
       <div className="bg-gray-50 px-4 py-2 flex items-center justify-between border-b border-gray-200">
         <span className="text-sm font-medium text-gray-700">YouTube Music</span>
-        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-sm">✕</button>
+        <button onClick={onClose} className="text-gray-900 hover:text-gray-600 text-sm">✕</button>
       </div>
 
       {/* Current Song Card */}

@@ -1,0 +1,30 @@
+/* Mobil cihazlarda kullanılan stil */
+@media only screen and (max-width: 768px) {
+  /* Ekran boyutuna göre öğelerin boyutlarını ayarlayın */
+  .container {
+    width: 100%;
+    padding: 0;
+  }
+
+  /* Mobil cihazlarda kullanılan font boyutunu ayarlayın */
+  body {
+    font-size: 16px;
+  }
+
+  /* Mobil cihazlarda kullanılan renk şemasını ayarlayın */
+  .header {
+    background-color: #333;
+  }
+
+  /* Mobil cihazlarda kullanılan menü sistemini ayarlayın */
+  .menu {
+    display: none;
+  }
+
+  /* Mobil cihazlarda kullanılan görsel dosyalarını optimize edin */
+  img {
+    width: 100%;
+    height: auto;
+  }
+
+} 

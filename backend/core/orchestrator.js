@@ -157,11 +157,11 @@ class ZetaOrchestrator {
 
     // 🌤️ HAVA DURUMU
     const hasWeatherIntent = (
-      (lowerInput.includes('hava durumu') || lowerInput.includes('weather')) ||
-      (lowerInput.includes('sıcaklık') && !lowerInput.includes('öğren')) ||
-      (lowerInput.includes('derece') && (lowerInput.includes('bugün') || lowerInput.includes('yarın'))) ||
-      /^(istanbul|ankara|izmir|bursa|antalya)\s*(hava|weather)/i.test(lowerInput)
-    );
+  (lowerInput.includes('hava durumu') || lowerInput.includes('weather')) ||
+  (lowerInput.includes('sıcaklık') && !lowerInput.includes('öğren')) ||
+  (lowerInput.includes('derece') && (lowerInput.includes('bugün') || lowerInput.includes('yarın'))) ||
+  /^(istanbul|ankara|izmir|bursa|antalya)\s*(hava|weather)/i.test(lowerInput)
+);
 
     if (hasWeatherIntent) {
       let city = 'Istanbul';
@@ -200,6 +200,17 @@ class ZetaOrchestrator {
     if (searchKeywords.some(k => lowerInput.includes(k))) {
       return { useTool: true, toolName: 'webSearch', params: { query: userMessage } };
     }
+
+// 📸 INSTAGRAM
+const instagramPatterns = [
+  /instagram\.com\//i,
+  /instagram.*analiz/i,
+  /instagram.*profil/i,
+  /@[a-z0-9_.]+/i
+];
+if (instagramPatterns.some(p => p.test(userMessage))) {
+  return { useTool: true, toolName: 'instagram', params: { query: userMessage } };
+}
 
     // 🔢 HESAP MAKİNESİ
     if (/(\d+)\s*[\+\-\*\/x÷]\s*(\d+)/.test(userMessage)) {
