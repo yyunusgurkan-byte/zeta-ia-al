@@ -6,11 +6,16 @@ import { useSpeech } from './hooks/useSpeech'
 import { checkHealth } from './services/api'
 import { searchYouTube } from './services/youtube'
 import { getLiveMatches, getTeamLiveMatch, getMatchStatistics, getMatchEvents } from './services/football'
+import { getNobetciEczaneler } from './services/eczane'
 import ConversationList from './components/Sidebar/ConversationList'
 import MusicPlayer from './components/MusicPlayer/MusicPlayer'
 import LiveMatch from './components/LiveMatch/LiveMatch'
 import { parseCodeBlocks } from './components/Chat/MessageBubble'
 import CodePanel from './components/Chat/CodePanel'
+import { getIddaaOdds } from './services/iddaa'
+import IddaaCard from './components/Iddaa/IddaaCard'
+import { getDovizKripto } from './services/doviz'
+import DovizKripto from './components/Doviz/DovizKripto'
 import "../css/style.css";
 
 function App() {
@@ -30,6 +35,7 @@ function App() {
   const [matchStatistics, setMatchStatistics] = useState(null)
   const [matchEvents, setMatchEvents] = useState(null)
   const [showLiveMatch, setShowLiveMatch] = useState(false)
+  const [eczaneLoading, setEczaneLoading] = useState(false)
 
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
@@ -115,7 +121,7 @@ function App() {
       formData.append('image', file);
       formData.append('prompt', 'Bu resimde ne var? Türkçe detaylı açıkla.');
 
-      const apiUrl = 'https://zeta-ai-backend-production.up.railway.app';
+      const apiUrl = 'https://zeta-ai-backend.onrender.com';
       const response = await fetch(`${apiUrl}/api/upload`, {
         method: 'POST',
         body: formData
@@ -307,16 +313,21 @@ function App() {
     setShowMusicPlayer(false)
   }
 
-  const handleSend = async (e) => {
+ const handleSend = async (e) => {
     if (e) e.preventDefault()
     if (!input.trim() || loading) return
 
     const userMessage = input.trim()
     setInput('')
-const lowerMessage = userMessage.toLowerCase()
+    const lowerMessage = userMessage.toLowerCase()
+
+    // ✅ HER ZAMAN conversation oluştur (ilk mesajda yoksa yarat)
+    let activeConv = currentConversation
+    if (!activeConv) {
+      activeConv = await createConversation('Yeni Sohbet')
+    }
 
     // 🎵 Sadece "çal/cal/oynat/play/aç/ac" yazıldıysa - boş player aç
-   
     if (['çal', 'cal', 'oynat', 'play', 'aç', 'ac'].includes(lowerMessage)) {
       addMessageToConversation({ role: 'user', content: userMessage })
       setMusicPlaylist([])
@@ -335,7 +346,7 @@ const lowerMessage = userMessage.toLowerCase()
       const addMatch = userMessage.match(/^(.+)[\s]+(ekle|add)$/i)
       if (addMatch) {
         const query = addMatch[1].trim()
-        if (query.split(/\s+/).length >= 2) { // En az 2 kelime
+        if (query.split(/\s+/).length >= 2) {
           addMessageToConversation({ role: 'user', content: userMessage })
           await handleAddToPlaylist(query)
           setTimeout(() => inputRef.current?.focus(), 100)
@@ -348,7 +359,6 @@ const lowerMessage = userMessage.toLowerCase()
     let query = null
     let isMusic = false
     
-    // Başta "çal X" formatı (aç/ac eklendi)
     const startMatch = userMessage.match(/^(çal|cal|oynat|play|aç|ac)[\s]+(.+)$/i)
     if (startMatch) {
       const searchQuery = startMatch[2].trim()
@@ -358,7 +368,6 @@ const lowerMessage = userMessage.toLowerCase()
       }
     }
     
-    // Sonda "X çal" formatı (aç/ac eklendi)
     if (!isMusic) {
       const endMatch = userMessage.match(/^(.+)[\s]+(çal|cal|oynat|play|aç|ac)$/i)
       if (endMatch) {
@@ -386,7 +395,6 @@ const lowerMessage = userMessage.toLowerCase()
       
       addMessageToConversation({ role: 'user', content: userMessage });
       
-      // Takım adı var mı kontrol et
       const teamMatch = userMessage.match(/(?:konyaspor|galatasaray|fenerbahçe|fenerbahce|beşiktaş|besiktas|trabzonspor|başakşehir|basaksehir|ankaragücü|ankaragucu|antalyaspor|alanyaspor|sivasspor|kayserispor|kasımpaşa|kasimpasa|gaziantep|göztepe|goztepe|hatayspor|adana demirspor|fatih karagümrük|fatih karagumruk|giresunspor|İstanbulspor|istanbulspor|pendikspor|rizespor|samsunspor|ümraniye|umraniye)/gi);
       const teamName = teamMatch ? teamMatch[0] : null;
       
@@ -395,11 +403,73 @@ const lowerMessage = userMessage.toLowerCase()
       return;
     }
 
-    let activeConv = currentConversation
-    if (!activeConv) {
-      activeConv = await createConversation('Yeni Sohbet')
+
+    // 💱 DÖVİZ & KRİPTO
+if (lowerMessage.includes('döviz') || lowerMessage.includes('doviz') ||
+    lowerMessage.includes('kripto') || lowerMessage.includes('bitcoin') ||
+    lowerMessage.includes('dolar') || lowerMessage.includes('euro') ||
+    lowerMessage.includes('kur')) {
+  addMessageToConversation({ role: 'user', content: userMessage })
+  addMessageToConversation({ role: 'assistant', content: '💱 Döviz ve kripto kurları yükleniyor...' })
+  try {
+    const data = await getDovizKripto()
+    addMessageToConversation({
+      role: 'assistant',
+      content: '💱 Güncel döviz ve kripto kurları:',
+      toolData: { type: 'doviz', ...data }
+    })
+  } catch (err) {
+    addMessageToConversation({ role: 'assistant', content: `❌ Döviz verisi alınamadı: ${err.message}` })
+  }
+  setTimeout(() => inputRef.current?.focus(), 100)
+  return
+}
+
+    // 💊 NÖBETÇİ ECZANE
+    if (lowerMessage.includes('eczane') && (lowerMessage.includes('nöbet') || lowerMessage.includes('nobet') || lowerMessage.includes('açık') || lowerMessage.includes('acik'))) {
+      addMessageToConversation({ role: 'user', content: userMessage })
+      const sehirler = ['istanbul','ankara','izmir','bursa','antalya','adana','konya','gaziantep','mersin','kayseri','eskişehir','eskisehir','diyarbakır','diyarbakir','samsun','trabzon','malatya','sakarya','denizli','manisa','balıkesir','balikesir','van','erzurum','kahramanmaraş','kahramanmaras']
+      const bulunanSehir = sehirler.find(s => lowerMessage.includes(s)) || 'istanbul'
+      const sehirGoster = bulunanSehir.charAt(0).toUpperCase() + bulunanSehir.slice(1)
+      setEczaneLoading(true)
+      addMessageToConversation({ role: 'assistant', content: `💊 **${sehirGoster}** için nöbetçi eczaneler aranıyor...` })
+      try {
+        const data = await getNobetciEczaneler(bulunanSehir)
+        addMessageToConversation({
+          role: 'assistant',
+          content: data.success ? `💊 **${data.sehir}** için **${data.toplam}** nöbetçi eczane bulundu:` : `❌ Nöbetçi eczane bilgisi alınamadı.`,
+          toolData: data.success ? { type: 'eczane', ...data } : null
+        })
+      } catch (err) {
+        addMessageToConversation({ role: 'assistant', content: `❌ Nöbetçi eczane hatası: ${err.message}` })
+      } finally {
+        setEczaneLoading(false)
+      }
+      setTimeout(() => inputRef.current?.focus(), 100)
+      return
     }
 
+    // 🎯 İDDAA
+if (lowerMessage.includes('iddaa') || lowerMessage.includes('bahis') || 
+    lowerMessage.includes('spor toto') || lowerMessage.includes('maç tahmini') ||
+    lowerMessage.includes('toto') || lowerMessage.includes('tahmin')) {
+  addMessageToConversation({ role: 'user', content: userMessage })
+  addMessageToConversation({ role: 'assistant', content: '🎯 Süper Lig iddaa oranları ve tahminler yükleniyor...' })
+  try {
+    const data = await getIddaaOdds()
+    addMessageToConversation({
+      role: 'assistant',
+      content: '🎯 **Türkiye Süper Lig** iddaa oranları:',
+      toolData: { type: 'iddaa', ...data }
+    })
+  } catch (err) {
+    addMessageToConversation({ role: 'assistant', content: `❌ İddaa verisi alınamadı: ${err.message}` })
+  }
+  setTimeout(() => inputRef.current?.focus(), 100)
+  return
+}
+
+    // 💬 NORMAL SOHBET
     addMessageToConversation({ role: 'user', content: userMessage })
     const result = await sendMessage(userMessage, activeConv.id, activeConv.messages || [])
 
@@ -513,103 +583,89 @@ const renderMessageContent = (content) => {
               </svg>
             </button>
 
-            <div className="flex items-center gap-4 flex-1 md:flex-initial justify-center md:justify-start">
-             <div className="h-20 md:h-24 w-48 md:w-56 flex items-center justify-center overflow-hidden ml-4 md:ml-0">
-  <img
-    src="https://r.resimlink.com/hvdiOrR3Jub.png"
-    alt="Zeta Logo"
-    className="h-full w-full object-contain"
-    style={{ transform: 'scale(2.5)' }}
-  />
+     <div className="flex items-center gap-4 flex-1 justify-start">
+  <div className="flex items-center justify-center ml-4">
+    <h1 className="text-5xl md:text-4xl font-black text-white tracking-tighter drop-shadow-2xl" style={{ textShadow: '4px 4px 12px rgba(0,0,0,0.9), 2px 2px 6px rgba(0,0,0,0.7)' }}>
+      AL ZETA
+    </h1>
+  </div>
 </div>
-            </div>
 
-            {/* HEADER KONTROLLERİ */}
-            <div className="flex flex-col items-end gap-2">
-              
-              {/* Üst Satır: Butonlar (Yatay) */}
-              <div className="flex items-center gap-3">
-                
-                {/* 🖼️ RESİM YÜKLEME BUTONU */}
-                <input
-                  type="file"
-                  id="image-upload"
-                  className="hidden"
-                  onChange={handleImageUpload}
-                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-                />
-                <button
-                  type="button"
-                  onClick={() => document.getElementById('image-upload').click()}
-                  disabled={imageUploading}
-                  className="p-2 bg-gray-900 hover:bg-green-700 text-white rounded-lg transition-all shadow-md active:scale-95 disabled:opacity-50"
-                  title="Resim Yükle"
-                >
-                  {imageUploading ? (
-                    <svg className="w-5 h-5 md:w-6 md:h-6 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                  ) : (
-                    <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  )}
-                </button>
+           {/* HEADER KONTROLLERİ */}
+<div className="flex flex-col items-end gap-1">
+  
+  {/* Butonlar */}
+  <div className="flex items-center gap-2">
+    
+    {/* 🖼️ RESİM YÜKLEME BUTONU */}
+    <input
+      type="file"
+      id="image-upload"
+      className="hidden"
+      onChange={handleImageUpload}
+      accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+    />
+    <button
+      type="button"
+      onClick={() => document.getElementById('image-upload').click()}
+      disabled={imageUploading}
+      className="p-2 bg-gray-900 hover:bg-green-700 text-white rounded-lg transition-all shadow-md active:scale-95 disabled:opacity-50"
+      title="Resim Yükle"
+    >
+      {imageUploading ? (
+        <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+      ) : (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+      )}
+    </button>
 
-                {/* 🎵 MÜZİK ÇALAR BUTONU */}
-                <button
-                  type="button"
-                  onClick={() => setShowMusicPlayer(!showMusicPlayer)}
-                  className={`p-2 ${showMusicPlayer ? 'bg-pink-600 hover:bg-pink-700' : 'bg-gray-900 hover:bg-green-700'} text-white rounded-lg transition-all shadow-md active:scale-95`}
-                  title="Müzik Çalar"
-                >
-                  <svg className="w-5 h-5 md:w-6 md:h-6" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
-                  </svg>
-                </button>
+    {/* 🎵 MÜZİK ÇALAR BUTONU */}
+    <button
+      type="button"
+      onClick={() => setShowMusicPlayer(!showMusicPlayer)}
+      className={`p-2 ${showMusicPlayer ? 'bg-pink-600 hover:bg-pink-700' : 'bg-gray-900 hover:bg-green-700'} text-white rounded-lg transition-all shadow-md active:scale-95`}
+      title="Müzik Çalar"
+    >
+      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+      </svg>
+    </button>
 
-                {/* TTS Toggle */}
-                <span className="hidden sm:inline text-xs font-medium text-gray-900">Sesli Yanıt</span>
-                <button
-                  onClick={toggleSpeech}
-                  className={`relative inline-flex h-8 w-14 items-center rounded-full transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
-                    isEnabled 
-                      ? 'bg-gradient-to-r from-green-700 to-green-600 shadow-lg shadow-indigo-500/50' 
-                      : 'bg-red-900'
-                  }`}
-                >
-                  <span className="sr-only">TTS Toggle</span>
-                  <span
-                    className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-lg transition-all duration-300 ease-in-out ${
-                      isEnabled ? 'translate-x-7' : 'translate-x-1'
-                    }`}
-                  >
-                    <svg 
-                      className={`h-6 w-6 p-1 transition-colors duration-300 ${
-                        isEnabled ? 'text-indigo-600' : 'text-gray-400'
-                      }`} 
-                      fill="currentColor" 
-                      viewBox="0 0 20 20"
-                    >
-                      {isEnabled ? (
-                        <path d="M10 3.75a.75.75 0 00-1.264-.546L5.203 6H2.667a.75.75 0 00-.75.75v6.5c0 .414.336.75.75.75h2.536l3.533 2.796A.75.75 0 0010 16.25V3.75zM11.25 7a.75.75 0 011.28-.53 5 5 0 010 7.06.75.75 0 11-1.28-.53 3.5 3.5 0 000-6zm2.47-2.47a.75.75 0 011.06 0 8 8 0 010 11.314.75.75 0 01-1.06-1.06 6.5 6.5 0 000-9.194.75.75 0 010-1.06z"/>
-                      ) : (
-                        <path d="M10.047 3.062a.75.75 0 01.453.688v12.5a.75.75 0 01-1.264.546L5.703 13.5H3.167a.75.75 0 01-.7-.48L1.5 9.75a.75.75 0 01.7-1.02h2.036l3.533-3.296a.75.75 0 01.81-.142zM13.78 7.22a.75.75 0 10-1.06 1.06L14.44 10l-1.72 1.72a.75.75 0 101.06 1.06l1.72-1.72 1.72 1.72a.75.75 0 101.06-1.06L16.56 10l1.72-1.72a.75.75 0 00-1.06-1.06L15.5 8.94l-1.72-1.72z"/>
-                      )}
-                    </svg>
-                  </span>
-                </button>
-              </div>
+    {/* TTS Toggle */}
+    <button
+      onClick={toggleSpeech}
+      className={`relative inline-flex h-8 w-14 items-center rounded-full transition-all duration-300 ease-in-out ${
+        isEnabled 
+          ? 'bg-gradient-to-r from-green-700 to-green-600' 
+          : 'bg-red-900'
+      }`}
+    >
+      <span className="sr-only">TTS Toggle</span>
+      <span className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-lg transition-all duration-300 ease-in-out ${isEnabled ? 'translate-x-7' : 'translate-x-1'}`}>
+        <svg className={`h-6 w-6 p-1 ${isEnabled ? 'text-indigo-600' : 'text-gray-400'}`} fill="currentColor" viewBox="0 0 20 20">
+          {isEnabled ? (
+            <path d="M10 3.75a.75.75 0 00-1.264-.546L5.203 6H2.667a.75.75 0 00-.75.75v6.5c0 .414.336.75.75.75h2.536l3.533 2.796A.75.75 0 0010 16.25V3.75zM11.25 7a.75.75 0 011.28-.53 5 5 0 010 7.06.75.75 0 11-1.28-.53 3.5 3.5 0 000-6zm2.47-2.47a.75.75 0 011.06 0 8 8 0 010 11.314.75.75 0 01-1.06-1.06 6.5 6.5 0 000-9.194.75.75 0 010-1.06z"/>
+          ) : (
+            <path d="M10.047 3.062a.75.75 0 01.453.688v12.5a.75.75 0 01-1.264.546L5.703 13.5H3.167a.75.75 0 01-.7-.48L1.5 9.75a.75.75 0 01.7-1.02h2.036l3.533-3.296a.75.75 0 01.81-.142zM13.78 7.22a.75.75 0 10-1.06 1.06L14.44 10l-1.72 1.72a.75.75 0 101.06 1.06l1.72-1.72 1.72 1.72a.75.75 0 101.06-1.06L16.56 10l1.72-1.72a.75.75 0 00-1.06-1.06L15.5 8.94l-1.72-1.72z"/>
+          )}
+        </svg>
+      </span>
+    </button>
+  </div>
 
-              {/* Alt Satır: Online Badge */}
-              <div className="flex items-center gap-1.5 bg-gray-900/80 px-3 py-1.5 rounded-full border border-gray-300/20">
-                <span className={`w-2 h-2 rounded-full animate-pulse ${healthStatus?.status === 'ok' ? 'bg-green-400' : 'bg-red-500'}`}></span>
-                <span className="text-[10px] text-white font-bold uppercase tracking-wider">
-                  {healthStatus?.status === 'ok' ? 'ONLINE' : 'OFFLINE'}
-                </span>
-              </div>
-            </div>
+  {/* Online Badge */}
+  <div className="flex items-center gap-1.5 bg-gray-900/80 px-3 py-1.5 rounded-full border border-gray-300/20">
+    <span className={`w-2 h-2 rounded-full animate-pulse ${healthStatus?.status === 'ok' ? 'bg-green-400' : 'bg-red-500'}`}></span>
+    <span className="text-[10px] text-white font-bold uppercase tracking-wider">
+      {healthStatus?.status === 'ok' ? 'ONLINE' : 'OFFLINE'}
+    </span>
+  </div>
+</div>
           </div>
         </header>
 
@@ -1091,6 +1147,68 @@ const renderMessageContent = (content) => {
                           </div>
                         </div>
                       )}
+                    </div>
+                  )}
+                  {/* 💊 NÖBETÇİ ECZANE */}
+                  {msg.toolData?.type === 'eczane' && (
+                    <div className="mt-3 bg-white rounded-lg border-2 border-green-500 overflow-hidden">
+                      <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-4 py-3 flex items-center justify-between">
+                        <h3 className="text-white font-bold flex items-center gap-2 text-lg">
+                          <span>💊</span>
+                          Nöbetçi Eczaneler — {msg.toolData.sehir}
+                        </h3>
+                        <div className="text-right">
+                          <div className="text-xs text-green-100">{msg.toolData.tarih}</div>
+                          <div className="text-xs text-green-100">{msg.toolData.toplam} eczane</div>
+                        </div>
+                      </div>
+                      <div className="divide-y divide-gray-100 max-h-96 overflow-y-auto">
+                        {msg.toolData.eczaneler && msg.toolData.eczaneler.length === 0 ? (
+                          <div className="p-6 text-center text-gray-500">
+                            <span className="text-4xl block mb-2">🔍</span>
+                            Bugün için nöbetçi eczane bulunamadı.
+                          </div>
+                        ) : (
+                          msg.toolData.eczaneler && msg.toolData.eczaneler.map((eczane, idx) => (
+                            <div key={idx} className="p-4 hover:bg-green-50 transition-colors">
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="flex-1">
+                                  <h4 className="font-bold text-gray-900 text-sm">💊 {eczane.ad}</h4>
+                                  {eczane.ilce && (
+                                    <span className="inline-block mt-1 text-xs font-semibold bg-green-100 text-gray-900 px-2 py-0.5 rounded-full">
+                                      📍 {eczane.ilce}
+                                    </span>
+                                  )}
+                                  {eczane.adres && (
+                                    <p className="text-xs font-semibold text-gray-900 mt-1">🗺️ {eczane.adres}</p>
+                                  )}
+                                </div>
+                                {eczane.telefon && (
+                                  <a
+                                    href={`tel:${eczane.telefon.replace(/\s/g, '')}`}
+                                    className="flex-shrink-0 flex items-center gap-1 bg-green-200 text-gray text-xs px-3 py-1.5 rounded-lg hover:bg-green-700 transition-colors"
+                                  >
+                                    📞 {eczane.telefon}
+                                  </a>
+                                )}
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                      <div className="bg-gray-50 px-4 py-2 flex items-center justify-between">
+                        <span className="text-xs text-gray-400">Kaynak: nosyapi.com</span>
+                        <a href={msg.toolData.url} target="_blank" rel="noopener noreferrer" className="text-xs text-green-600 hover:underline">
+                          Tüm eczaneleri gör →
+                        </a>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 💱 DÖVİZ */}
+                  {msg.toolData?.type === 'doviz' && (
+                    <div className="mt-3">
+                      <DovizKripto data={msg.toolData} />
                     </div>
                   )}
                 </div>
