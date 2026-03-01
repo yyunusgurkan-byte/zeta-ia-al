@@ -1205,6 +1205,20 @@ const renderMessageContent = (content) => {
                     </div>
                   )}
 
+{/* 🎯 İDDAA */}
+                  {msg.toolData?.type === 'iddaa' && (
+                    <IddaaCard data={msg.toolData} />
+                  )}
+                    
+                  {/* 💱 DÖVİZ */}
+                  {msg.toolData?.type === 'doviz' && (
+                    <div className="mt-3">
+                      <DovizKripto data={msg.toolData} />
+                    </div>
+                  )}
+
+                    
+
                   {/* 💱 DÖVİZ */}
                   {msg.toolData?.type === 'doviz' && (
                     <div className="mt-3">
