@@ -585,7 +585,7 @@ const renderMessageContent = (content) => {
 
      <div className="flex items-center gap-4 flex-1 justify-start">
   <div className="flex items-center justify-center ml-4">
-    <h1 className="text-5xl md:text-4xl font-black text-white tracking-tighter drop-shadow-2xl" style={{ textShadow: '4px 4px 12px rgba(0,0,0,0.9), 2px 2px 6px rgba(0,0,0,0.7)' }}>
+    <h1 className="text-5xl md:text-2xl font-black text-white tracking-tighter drop-shadow-2xl" style={{ textShadow: '4px 4px 12px rgba(0,0,0,0.9), 2px 2px 6px rgba(0,0,0,0.7)' }}>
       AL ZETA
     </h1>
   </div>
@@ -1210,12 +1210,7 @@ const renderMessageContent = (content) => {
                     <IddaaCard data={msg.toolData} />
                   )}
                     
-                  {/* 💱 DÖVİZ */}
-                  {msg.toolData?.type === 'doviz' && (
-                    <div className="mt-3">
-                      <DovizKripto data={msg.toolData} />
-                    </div>
-                  )}
+                 
 
                     
 
