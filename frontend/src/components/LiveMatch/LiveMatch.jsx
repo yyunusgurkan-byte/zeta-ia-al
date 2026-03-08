@@ -93,10 +93,12 @@ const LiveMatch = ({ matchData, statistics, events, onRefresh }) => {
                     <span className="text-2xl text-gray-400">-</span>
                     <span className="text-4xl font-bold text-gray-900">{awayGoals}</span>
                   </div>
-                  <div className="mt-1 px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full">
-                    {elapsed}'
-                  </div>
-                </div>
+                 {elapsed > 0 && (
+  <div className="mt-1 px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full">
+    {elapsed}'
+  </div>
+)}
+</div>
                 <div className="flex items-center gap-3">
                   <div className="text-left">
                     <div className="font-bold text-gray-900">{awayTeam.name}</div>
