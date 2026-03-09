@@ -1,13 +1,12 @@
 @echo off
-
 echo === BACKEND PUSH ===
-cd /d C:\Users\Azram\Desktop\zeta-ai-backend
+cd /d C:\Users\Azram\Desktop\zeta-ai\backend
 git add .
-git commit -m "Guncelleme - %date% %time%"
+git commit -m "Backend guncellemesi - %date% %time%"
 git push
 
-echo === FRONTEND PUSH ===
-cd /d C:\Users\Azram\Desktop\zeta-ai\frontend
+echo === FRONTEND + ANA REPO PUSH ===
+cd /d C:\Users\Azram\Desktop\zeta-ai
 git add .
 git commit -m "Guncelleme - %date% %time%"
 git push

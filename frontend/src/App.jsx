@@ -14,6 +14,10 @@ import IddaaCard from './components/Iddaa/IddaaCard'
 import EczaneWidget from './components/Eczane/EczaneWidget'
 import DovizWidget from './components/Doviz/DovizWidget'
 import SkorWidget from './components/Skor/SkorWidget'
+import WindyWidget from './components/Windy/WindyWidget'
+import KuranWidget from './components/Kuran/KuranWidget'
+
+
 import "../css/style.css"
 
 function App() {
@@ -26,6 +30,10 @@ function App() {
   const [codeBlocks, setCodeBlocks] = useState([])
   const [showCodePanel, setShowCodePanel] = useState(false)
   const [showSkor, setShowSkor] = useState(false)
+  const [showWindy, setShowWindy] = useState(false)
+  const [showKuran, setShowKuran] = useState(false)
+
+
 
   // ── MÜZİK STATE ──────────────────────────────────────────
   const [showMusicPlayer, setShowMusicPlayer] = useState(false)
@@ -272,9 +280,10 @@ if (lowerMessage.includes('puan') || lowerMessage.includes('sıralama') ||
 }
 
     // 🌤️ Hava durumu
-    if (lowerMessage.includes('hava') || lowerMessage.includes('hava durumu') ||
-        lowerMessage.includes('sıcaklık') || lowerMessage.includes('sicaklik') ||
-        lowerMessage.includes('yağmur') || lowerMessage.includes('kar')) {
+   if (lowerMessage.includes('hava') || lowerMessage.includes('hava durumu') ||
+    lowerMessage.includes('sıcaklık') || lowerMessage.includes('sicaklik') ||
+    lowerMessage.includes('yağmur') ||
+    (lowerMessage.includes('kar') && lowerMessage.includes('hava'))) {
       addMessageToConversation({ role: 'user', content: userMessage })
       const sehirler = ['istanbul','ankara','izmir','bursa','antalya','adana','konya','gaziantep','mersin','kayseri','trabzon','samsun','erzurum','diyarbakır','diyarbakir']
       const bulunanSehir = sehirler.find(s => lowerMessage.includes(s)) || 'Istanbul'
@@ -285,6 +294,27 @@ if (lowerMessage.includes('puan') || lowerMessage.includes('sıralama') ||
       setTimeout(() => inputRef.current?.focus(), 100)
       return
     }
+
+    // 🗺️ Hava Haritası
+if (lowerMessage.includes('dalga') || lowerMessage.includes('harita') ||
+    lowerMessage.includes('rüzgar harita') || lowerMessage.includes('windy')) {
+  addMessageToConversation({ role: 'user', content: userMessage })
+  setShowWindy(true)
+  addMessageToConversation({ role: 'assistant', content: '🗺️ Hava haritası açıldı!' })
+  setTimeout(() => inputRef.current?.focus(), 100)
+  return
+}
+
+    // 📖 Kuran
+if (lowerMessage.includes('kuran') || lowerMessage.includes('kur\'an') ||
+    lowerMessage.includes('mushaf') || lowerMessage.includes('kuran-ı kerim')) {
+  addMessageToConversation({ role: 'user', content: userMessage })
+  setShowKuran(true)
+  addMessageToConversation({ role: 'assistant', content: '📖 Kur\'an-ı Kerim açıldı!' })
+  setTimeout(() => inputRef.current?.focus(), 100)
+  return
+}
+
 
     // 💱 Döviz & Kripto & Altın
     if (lowerMessage.includes('döviz') || lowerMessage.includes('doviz') ||
@@ -323,6 +353,8 @@ if (lowerMessage.includes('puan') || lowerMessage.includes('sıralama') ||
       setTimeout(() => inputRef.current?.focus(), 100)
       return
     }
+
+
 
     // 💬 Normal sohbet
     addMessageToConversation({ role: 'user', content: userMessage })
@@ -553,6 +585,17 @@ if (lowerMessage.includes('puan') || lowerMessage.includes('sıralama') ||
             {showSkor && (
   <SkorWidget onClose={() => setShowSkor(false)} />
 )}
+
+            {showWindy && (
+  <WindyWidget onClose={() => setShowWindy(false)} />
+)}
+
+            {showKuran && (
+  <KuranWidget onClose={() => setShowKuran(false)} />
+)}
+
+
+
 
             {/* ── MESAJ LİSTESİ ── */}
             {messages.map((msg, idx) => (
