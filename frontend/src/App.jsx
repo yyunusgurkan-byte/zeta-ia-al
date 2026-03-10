@@ -256,11 +256,9 @@ function App() {
     }
 
     // 🏟️ Canlı maç
-    if (lowerMessage.includes('canlı maç') || lowerMessage.includes('canli mac') ||
-        lowerMessage.includes('maç skoru') || lowerMessage.includes('maç sonucu') ||
-        lowerMessage.includes('live match') || lowerMessage.includes('tüm maçlar') ||
-        lowerMessage.includes('tum maclar') || lowerMessage.includes('skorlar') ||
-        lowerMessage.includes('canlı skorlar') || lowerMessage.includes('maçlar')) {
+    if (lowerMessage.includes('iddaa') || lowerMessage.includes('bahis') ||
+    lowerMessage.includes('spor toto') || lowerMessage.includes('toto') ||
+    (lowerMessage.includes('tahmin') && lowerMessage.includes('iddaa'))) {
       addMessageToConversation({ role: 'user', content: userMessage })
       setShowLiveMatch(true)
       addMessageToConversation({ role: 'assistant', content: `🏟️ Canlı maç skorları açıldı!` })
@@ -280,7 +278,7 @@ if (lowerMessage.includes('puan') || lowerMessage.includes('sıralama') ||
 }
 
     // 🌤️ Hava durumu
-   if (lowerMessage.includes('hava') || lowerMessage.includes('hava durumu') ||
+   if (lowerMessage.includes('hava durumu') || lowerMessage.includes('hava durumu') ||
     lowerMessage.includes('sıcaklık') || lowerMessage.includes('sicaklik') ||
     lowerMessage.includes('yağmur') ||
     (lowerMessage.includes('kar') && lowerMessage.includes('hava'))) {
@@ -296,7 +294,7 @@ if (lowerMessage.includes('puan') || lowerMessage.includes('sıralama') ||
     }
 
     // 🗺️ Hava Haritası
-if (lowerMessage.includes('dalga') || lowerMessage.includes('harita') ||
+if (lowerMessage.includes('dalgalar') || lowerMessage.includes('harita') ||
     lowerMessage.includes('rüzgar harita') || lowerMessage.includes('windy')) {
   addMessageToConversation({ role: 'user', content: userMessage })
   setShowWindy(true)
@@ -341,7 +339,7 @@ if (lowerMessage.includes('kuran') || lowerMessage.includes('kur\'an') ||
     // 🎯 İddaa
     if (lowerMessage.includes('iddaa') || lowerMessage.includes('bahis') ||
         lowerMessage.includes('spor toto') || lowerMessage.includes('maç tahmini') ||
-        lowerMessage.includes('toto') || lowerMessage.includes('tahmin')) {
+        lowerMessage.includes('toto') || lowerMessage.includes('toto tahmini')) {
       addMessageToConversation({ role: 'user', content: userMessage })
       addMessageToConversation({ role: 'assistant', content: '🎯 Süper Lig iddaa oranları yükleniyor...' })
       try {
