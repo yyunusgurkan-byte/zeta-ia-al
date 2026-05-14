@@ -40,28 +40,31 @@ export default function WindyWidget({ onClose }) {
       </div>
 
       {/* İçerik */}
-      <div className="flex rounded-b-xl overflow-hidden border border-gray-700" style={{ background: '#16213e' }}>
+      <div className="flex flex-col md:flex-row rounded-b-xl overflow-hidden border border-gray-700" style={{ background: '#16213e' }}>
 
-        {/* Sol - Harita */}
+        {/* Harita */}
         <div className="flex-1">
           <iframe
             key={key}
             src={src}
             width="100%"
-            height="450"
+            height="400"
             frameBorder="0"
-            style={{ border: 'none', display: 'block' }}
+            style={{ border: 'none', display: 'block', minHeight: '300px' }}
           />
         </div>
 
-        {/* Sağ - Katman Seçici */}
-        <div className="flex flex-col gap-2 p-3 w-36 flex-shrink-0" style={{ background: '#16213e' }}>
-          <span className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1 text-center">Katman</span>
+        {/* Katman Seçici - mobilde yatay altta, masaüstünde dikey sağda */}
+        <div
+          className="flex flex-row md:flex-col gap-2 p-3 md:w-36 w-full flex-shrink-0 overflow-x-auto"
+          style={{ background: '#16213e' }}
+        >
+          <span className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1 text-center hidden md:block">Katman</span>
           {KATMANLAR.map(k => (
             <button
               key={k.overlay}
               onClick={() => handleKatman(k)}
-              className={`text-xs px-2 py-2.5 rounded-lg font-semibold transition-all text-left ${
+              className={`text-xs px-2 py-2.5 rounded-lg font-semibold transition-all text-left flex-shrink-0 ${
                 aktif.overlay === k.overlay
                   ? 'bg-blue-600 text-white shadow-lg'
                   : 'bg-gray-700 text-gray-300 hover:bg-gray-600'

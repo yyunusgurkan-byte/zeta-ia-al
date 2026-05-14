@@ -256,9 +256,9 @@ function App() {
     }
 
     // 🏟️ Canlı maç
-    if (lowerMessage.includes('iddaa') || lowerMessage.includes('bahis') ||
-    lowerMessage.includes('spor toto') || lowerMessage.includes('toto') ||
-    (lowerMessage.includes('tahmin') && lowerMessage.includes('iddaa'))) {
+    if (lowerMessage.includes('iddaa sonuçları') || lowerMessage.includes('bahis') ||
+    lowerMessage.includes('canlı maç') || lowerMessage.includes('toto') ||
+    (lowerMessage.includes('maç tahmin') && lowerMessage.includes('iddaa tahmini'))) {
       addMessageToConversation({ role: 'user', content: userMessage })
       setShowLiveMatch(true)
       addMessageToConversation({ role: 'assistant', content: `🏟️ Canlı maç skorları açıldı!` })
@@ -268,8 +268,8 @@ function App() {
 
 
      // 📊 Puan Tablosu
-if (lowerMessage.includes('puan') || lowerMessage.includes('sıralama') ||
-    lowerMessage.includes('tablo') || lowerMessage.includes('standings')) {
+if (lowerMessage.includes('puan tablosu') || lowerMessage.includes('puan tablosu') ||
+    lowerMessage.includes('puan tablo') || lowerMessage.includes('puan tablo')) {
   addMessageToConversation({ role: 'user', content: userMessage })
   setShowSkor(true)
   addMessageToConversation({ role: 'assistant', content: '📊 Puan tablosu açıldı!' })
@@ -294,8 +294,8 @@ if (lowerMessage.includes('puan') || lowerMessage.includes('sıralama') ||
     }
 
     // 🗺️ Hava Haritası
-if (lowerMessage.includes('dalgalar') || lowerMessage.includes('harita') ||
-    lowerMessage.includes('rüzgar harita') || lowerMessage.includes('windy')) {
+if (lowerMessage.includes('dalgalar') || lowerMessage.includes('hava harita') ||
+    lowerMessage.includes('rüzgar haritası') || lowerMessage.includes('windy')) {
   addMessageToConversation({ role: 'user', content: userMessage })
   setShowWindy(true)
   addMessageToConversation({ role: 'assistant', content: '🗺️ Hava haritası açıldı!' })
@@ -454,25 +454,11 @@ if (lowerMessage.includes('kuran') || lowerMessage.includes('kur\'an') ||
             <div className="flex flex-col items-end gap-1">
               <div className="flex items-center gap-2">
 
-                {/* Resim Yükle */}
-                <input type="file" id="image-upload" className="hidden" onChange={handleImageUpload} accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" />
-                <button type="button" onClick={() => document.getElementById('image-upload').click()} disabled={imageUploading}
-                  className="p-2 bg-gray-900 hover:bg-green-700 text-white rounded-lg transition-all shadow-md active:scale-95 disabled:opacity-50" title="Resim Yükle">
-                  {imageUploading ? (
-                    <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                  ) : (
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  )}
-                </button>
+             
 
                 {/* Müzik Çalar */}
                 <button type="button" onClick={() => setShowMusicPlayer(!showMusicPlayer)}
-                  className={`p-2 ${showMusicPlayer ? 'bg-pink-600 hover:bg-pink-700' : 'bg-gray-900 hover:bg-green-700'} text-white rounded-lg transition-all shadow-md active:scale-95`} title="Müzik Çalar">
+                  className={`p-1 ${showMusicPlayer ? 'bg-pink-600 hover:bg-pink-700' : 'bg-gray-900 hover:bg-green-700'} text-white rounded-lg transition-all shadow-md active:scale-95`} title="Müzik Çalar">
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
                   </svg>
@@ -480,10 +466,10 @@ if (lowerMessage.includes('kuran') || lowerMessage.includes('kur\'an') ||
 
                 {/* TTS Toggle */}
                 <button onClick={toggleSpeech}
-                  className={`relative inline-flex h-8 w-14 items-center rounded-full transition-all duration-300 ease-in-out ${isEnabled ? 'bg-gradient-to-r from-green-700 to-green-600' : 'bg-red-900'}`}>
+                  className={`relative inline-flex h-4 w-10 items-center rounded-full transition-all duration-300 ease-in-out ${isEnabled ? 'bg-gradient-to-r from-green-700 to-green-600' : 'bg-red-900'}`}>
                   <span className="sr-only">TTS Toggle</span>
                   <span className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-lg transition-all duration-300 ease-in-out ${isEnabled ? 'translate-x-7' : 'translate-x-1'}`}>
-                    <svg className={`h-6 w-6 p-1 ${isEnabled ? 'text-indigo-600' : 'text-gray-400'}`} fill="currentColor" viewBox="0 0 20 20">
+                    <svg className={`h-6 w-6 p-1 ${isEnabled ? 'text-green-600' : 'text-gray-400'}`} fill="currentColor" viewBox="0 0 20 20">
                       {isEnabled ? (
                         <path d="M10 3.75a.75.75 0 00-1.264-.546L5.203 6H2.667a.75.75 0 00-.75.75v6.5c0 .414.336.75.75.75h2.536l3.533 2.796A.75.75 0 0010 16.25V3.75zM11.25 7a.75.75 0 011.28-.53 5 5 0 010 7.06.75.75 0 11-1.28-.53 3.5 3.5 0 000-6zm2.47-2.47a.75.75 0 011.06 0 8 8 0 010 11.314.75.75 0 01-1.06-1.06 6.5 6.5 0 000-9.194.75.75 0 010-1.06z"/>
                       ) : (
@@ -495,10 +481,10 @@ if (lowerMessage.includes('kuran') || lowerMessage.includes('kur\'an') ||
               </div>
 
               {/* Online Badge */}
-              <div className="flex items-center gap-1.5 bg-gray-900/80 px-3 py-1.5 rounded-full border border-gray-300/20">
+              <div className="flex items-center gap-0.5 bg-gray-900/80 px-2 py-1 rounded-full border border-gray-300/20">
                 <span className={`w-2 h-2 rounded-full animate-pulse ${healthStatus?.status === 'ok' ? 'bg-green-400' : 'bg-red-500'}`}></span>
                 <span className="text-[10px] text-white font-bold uppercase tracking-wider">
-                  {healthStatus?.status === 'ok' ? 'ONLINE' : 'OFFLINE'}
+                  {healthStatus?.status === 'ok' ? 'ok' : 'OFFLINE'}
                 </span>
               </div>
             </div>
@@ -847,18 +833,18 @@ if (lowerMessage.includes('kuran') || lowerMessage.includes('kur\'an') ||
         {/* ── INPUT ── */}
         <footer className="bg-white border-t p-4 flex-shrink-0">
           <form onSubmit={handleSend} className="max-w-4xl mx-auto">
-            <div className="relative flex items-center">
+            <div className="flex items-center gap-2">
               <input
                 ref={inputRef}
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Mesajınızı yazın..."
-                className="w-full px-4 py-3 pr-12 border-2 border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600 bg-white placeholder-black text-black"
+                className="w-full px-4 py-3 border-2 border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600 bg-white placeholder-black text-black"
                 disabled={loading}
               />
               <button type="submit" disabled={loading || !input.trim()}
-                className="absolute right-2 p-2 bg-gray-900 text-white rounded-lg hover:bg-indigo-700 disabled:bg-red-900 transition-all">
+                className="p-2 bg-gray-900 text-white rounded-lg hover:bg-indigo-700 disabled:bg-red-900 transition-all flex-shrink-0">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                 </svg>
